@@ -69,7 +69,9 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
 
   if (image_type_ == "nv12") {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image nv12");
-    MediaCodecManagerInit();
+    if (MediaCodecManagerInit()) {
+      throw std::runtime_error("Websocket Init Media Codec Manager failed");
+    }
     image_sub_ = nh_->create_subscription<sensor_msgs::msg::Image>(
         image_topic_name_, 10,
         std::bind(&Websocket::OnGetYUVImage, this, std::placeholders::_1));
@@ -80,7 +82,9 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
         std::bind(&Websocket::OnGetJpegImage, this, std::placeholders::_1));
   } else if (image_type_ == "nv12_hbmem") {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image nv12 hbmem");
-    MediaCodecManagerInit();
+    if (MediaCodecManagerInit()) {
+      throw std::runtime_error("Websocket Init Media Codec Manager failed");
+    }
     image_hbmem_sub_ =
         nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
             image_topic_name_, 10,
@@ -122,11 +126,15 @@ Websocket::~Websocket() {
 int Websocket::MediaCodecManagerInit() {
   auto &manager = horizon::vision::MediaCodecManager::Get();
   auto rv = manager.ModuleInit();
+  if (rv) return rv;
   venc_chn_ = manager.GetEncodeChn();
   rv = manager.EncodeChnInit(venc_chn_, PT_JPEG, image_width_, image_height_, 8,
                              HB_PIXEL_FORMAT_NV12, 0, 6000);
+  if (rv) return rv;
   rv = manager.SetUserQfactorParams(venc_chn_, jpeg_quality_);
+  if (rv) return rv;
   rv = manager.EncodeChnStart(venc_chn_);
+  if (rv) return rv;
   rv = manager.VbBufInit(venc_chn_, image_width_, image_height_, image_width_,
                          image_width_ * image_height_ * 3 / 2, 8, 1);
   return rv;
@@ -146,14 +154,17 @@ void Websocket::OnGetYUVImage(const sensor_msgs::msg::Image::SharedPtr msg) {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
       RCLCPP_WARN(nh_->get_logger(),
-                  "Aleardy stop, WebsocketPLugin Feedvideo return");
+                  "Aleardy stop, Websocket Feedvideo return");
       return;
     }
   }
   // auto time_now0 = std::chrono::duration_cast<std::chrono::microseconds>(
   //                      std::chrono::steady_clock::now().time_since_epoch())
   //                      .count();
-  EncodeJpeg(msg);
+  if (EncodeJpeg(msg)) {
+    RCLCPP_WARN(nh_->get_logger(), "Websocket EncodeJpeg failed");
+    return;
+  }
   // auto time_now1 = std::chrono::duration_cast<std::chrono::microseconds>(
   //                      std::chrono::steady_clock::now().time_since_epoch())
   //                      .count();
@@ -176,7 +187,7 @@ void Websocket::OnGetYUVImageHbmem(
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
       RCLCPP_WARN(nh_->get_logger(),
-                  "Aleardy stop, WebsocketPLugin Feedvideo return");
+                  "Aleardy stop, Websocket Feedvideo return");
       return;
     }
   }
@@ -184,7 +195,10 @@ void Websocket::OnGetYUVImageHbmem(
   //                      std::chrono::steady_clock::now().time_since_epoch())
   //                      .count();
   auto jpeg_image = std::make_shared<sensor_msgs::msg::Image>();
-  EncodeJpeg(msg, jpeg_image);
+  if (EncodeJpeg(msg, jpeg_image)) {
+    RCLCPP_WARN(nh_->get_logger(), "Websocket EncodeJpeg failed");
+    return;
+  }
   // auto time_now1 = std::chrono::duration_cast<std::chrono::microseconds>(
   //                      std::chrono::steady_clock::now().time_since_epoch())
   //                      .count();
@@ -206,7 +220,7 @@ void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
       RCLCPP_WARN(nh_->get_logger(),
-                  "Aleardy stop, WebsocketPLugin Feedvideo return");
+                  "Aleardy stop, Websocket Feedvideo return");
       return;
     }
   }
@@ -258,6 +272,8 @@ int Websocket::EncodeJpeg(const sensor_msgs::msg::Image::SharedPtr msg) {
          img_uv_size);
 
   rv = manager.EncodeYuvToJpg(venc_chn_, frame_buf, &stream_buf);
+  if (rv) return rv;
+
   auto data_ptr = stream_buf->stream_info.pstPack.vir_ptr;
   auto data_size = stream_buf->stream_info.pstPack.size;
 
@@ -266,6 +282,8 @@ int Websocket::EncodeJpeg(const sensor_msgs::msg::Image::SharedPtr msg) {
 
   msg->encoding = "jpeg";
   rv = manager.FreeStream(venc_chn_, stream_buf);
+  if (rv) return rv;
+
   rv = manager.FreeVbBuf(venc_chn_, frame_buf);
 
   return rv;
@@ -295,6 +313,8 @@ int Websocket::EncodeJpeg(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg,
          img_uv_size);
 
   rv = manager.EncodeYuvToJpg(venc_chn_, frame_buf, &stream_buf);
+  if (rv) return rv;
+
   auto data_ptr = stream_buf->stream_info.pstPack.vir_ptr;
   auto data_size = stream_buf->stream_info.pstPack.size;
 
@@ -320,8 +340,9 @@ int Websocket::EncodeJpeg(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg,
   memcpy(image_jpeg->data.data(), data_ptr, data_size);
 
   rv = manager.FreeStream(venc_chn_, stream_buf);
-  rv = manager.FreeVbBuf(venc_chn_, frame_buf);
+  if (rv) return rv;
 
+  rv = manager.FreeVbBuf(venc_chn_, frame_buf);
   return rv;
 }
 
@@ -333,7 +354,7 @@ int Websocket::PackSmartMsg(
 
   proto_frame_message.set_timestamp_(smart_msg->header.stamp.sec * 1000000000 +
                                      smart_msg->header.stamp.nanosec);
-  // proto_frame_message.set_sequence_id_(smart_msg->header.frame_id);
+  proto_frame_message.set_sequence_id_(frame_id_++);
 
   auto static_msg = proto_frame_message.mutable_statistics_msg_();
   auto fps_attrs = static_msg->add_attributes_();
@@ -357,14 +378,14 @@ int Websocket::PackSmartMsg(
       auto point1 = proto_box->mutable_top_left_();
       point1->set_x_(smart_roi.rect.x_offset * x_ratio);
       point1->set_y_(smart_roi.rect.y_offset * y_ratio);
-      // point1->set_score_();
+      // point1->set_score_(1.0);
       auto point2 = proto_box->mutable_bottom_right_();
       point2->set_x_((smart_roi.rect.x_offset + smart_roi.rect.width) *
                      x_ratio);
       point2->set_y_((smart_roi.rect.y_offset + smart_roi.rect.height) *
                      y_ratio);
-      // point2->set_score_();
-      // proto_box->set_score();
+      // point2->set_score_(1.0);
+      // proto_box->set_score(1.0);
     }
 
     // attributes
@@ -372,8 +393,8 @@ int Websocket::PackSmartMsg(
       auto attrs = target->add_attributes_();
       attrs->set_type_(smart_attributes.type);
       attrs->set_value_(smart_attributes.value);
-      //   attrs->set_score_();
-      //   attrs->set_value_string_();
+      // attrs->set_score_(1.0);
+      attrs->set_value_string_(std::to_string(smart_attributes.value));
     }
 
     // points
@@ -384,7 +405,7 @@ int Websocket::PackSmartMsg(
         auto point = proto_points->add_points_();
         point->set_x_(smart_point.x * x_ratio);
         point->set_y_(smart_point.y * y_ratio);
-        // point->set_score_();
+        point->set_score_(1.0);
       }
     }
 

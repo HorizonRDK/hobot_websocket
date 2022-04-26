@@ -83,6 +83,7 @@ class Websocket {
 
   std::ofstream output_file_;
   int image_count_ = 0;
+  uint64_t frame_id_ = 0;
 
   std::string image_topic_name_ = "/image_raw";
   std::string image_type_ = "nv12";
