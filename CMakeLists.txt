@@ -50,11 +50,10 @@ add_executable(websocket
   src/server/uws_server.cpp 
   src/protobuf/x3.pb.cc 
   src/utils/threads/threadpool.cpp
-  src/utils/time_helper.cpp
-  src/media_codec/media_codec_manager.cpp)
+  src/utils/time_helper.cpp)
 
 ament_target_dependencies(websocket rclcpp sensor_msgs ai_msgs hbm_img_msgs)
-target_link_libraries(websocket uWS ssl crypto z protobuf hbmedia cam vio multimedia isp iar tinyalsa)
+target_link_libraries(websocket uWS ssl crypto z protobuf)
 
 install(TARGETS
   websocket

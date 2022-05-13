@@ -13,15 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/image.hpp"
 #include "ai_msgs/msg/perception_targets.hpp"
 #include "hbm_img_msgs/msg/hbm_msg1080_p.hpp"
-#include "media_codec/media_codec_manager.h"
 #include "protobuf/x3.pb.h"
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/image.hpp"
 #include "server/uws_server.h"
 #include "threads/threadpool.h"
-
 
 namespace websocket {
 
@@ -45,9 +43,8 @@ class Websocket {
   Websocket(rclcpp::Node::SharedPtr &nh);
   ~Websocket();
 
-  void OnGetYUVImage(const sensor_msgs::msg::Image::SharedPtr msg);
-  void OnGetYUVImageHbmem(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg);
   void OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg);
+  void OnGetJpegImageHbmem(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg);
   void OnGetSmartMessage(const ai_msgs::msg::PerceptionTargets::SharedPtr msg);
 
  private:
@@ -79,33 +76,28 @@ class Websocket {
 
   hobot::CThreadPool data_send_thread_;
 
-  int venc_chn_;
-
   std::ofstream output_file_;
   int image_count_ = 0;
   uint64_t frame_id_ = 0;
 
-  std::string image_topic_name_ = "/image_raw";
-  std::string image_type_ = "nv12";
+  std::string image_topic_name_ = "/image_jpeg";
+  std::string image_type_ = "jpeg";
   std::string smart_topic_name_ = "/hobot_mono2d_body_detection";
 
-  int image_width_ = 1920;
-  int image_height_ = 1080;
-  int jpeg_quality_ = 95;
+  bool only_show_image_ = false;
+  bool using_hbmem_image_ = false;
 
-  int smart_width_ = 1920;
-  int smart_height_ = 1080;
-
-  int PackSmartMsg(x3::FrameMessage &proto_frame_message,
+  int FrameAddImage(x3::FrameMessage &msg_send,
+                    sensor_msgs::msg::Image::SharedPtr frame_msg);
+  int FrameAddSmart(x3::FrameMessage &proto_frame_message,
                     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg);
-  int SendSmartMessage(ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
-                       sensor_msgs::msg::Image::SharedPtr frame_msg);
-  void MapSmartProc(void);
-  int EncodeJpeg(const sensor_msgs::msg::Image::SharedPtr msg);
-  int EncodeJpeg(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg,
-                 sensor_msgs::msg::Image::SharedPtr image_jpeg);
-  int MediaCodecManagerInit(void);
-  int MediaCodecManagerDeInit(void);
+  int FrameAddSystemInfo(x3::FrameMessage &msg_send);
+  int SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg);
+  int SendImageSmartMessage(
+      ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
+      sensor_msgs::msg::Image::SharedPtr frame_msg);
+
+  void MessageProcess(void);
 };
 
 }  // namespace websocket

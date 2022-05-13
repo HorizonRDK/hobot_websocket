@@ -12,24 +12,20 @@
 
 ### 使用介绍
 
-websocket node接收hobot sensor传输的image消息和算法推理输出的智能结果数据，并进行匹配，然后输出渲染。
+websocket node接收hobot sensor传输的image消息和算法推理输出的智能结果数据，并进行匹配，然后输出渲染，同时也可单独显示视频。
 
-image消息支持`sensor_msgs::msg::Image`类型消息，`nv12`和`mjpeg`两种格式数据，以及零拷贝的`hbm_img_msgs::msg::HbmMsg1080P`类型消息。
+image消息支持`sensor_msgs::msg::Image`以及零拷贝的`hbm_img_msgs::msg::HbmMsg1080P`类型消息，必须为hobot codec输出的jpeg格式数据。
 
 智能结果数据支持`ai_msgs::msg::PerceptionTargets`类型消息，其中`header.stamp`必须和该结果对应的image消息相同，websocket会使用该字段进行消息匹配。
 
 websocket node支持通过parameters设置输入的topic以及图像数据类型和宽高，具体参数如下：
 
-| 参数名       | 解释                                                         | 是否必须 | 默认值                         | 备注                                                         |
-| ------------ | ------------------------------------------------------------ | -------- | ------------------------------ | ------------------------------------------------------------ |
-| image_topic  | 订阅的图像topic                                              | 否       | "/image_raw"                   |                                                              |
-| image_height | 输入图像高                                                   | 否       | 1080                           | 由于编码器限制，输入为nv12格式数据时，图像高必须是8的整数倍  |
-| image_width  | 输入图像宽                                                   | 否       | 1920                           | 由于编码器限制，输入为nv12格式数据时，图像宽必须是16的整数倍 |
-| image_type   | 输入图像类型，可选项为"nv12", "mjpeg", "nv12_hbmem"<br />"nv12"：`sensor_msgs::msg::Image`类型nv12图像<br />"mjpeg"：`sensor_msgs::msg::Image`类型mjpeg图像<br />"nv12_hbmem"：`hbm_img_msgs::msg::HbmMsg1080P`使用零拷贝的nv12图像 | 否       | "nv12"                         |                                                              |
-| jpeg_quality | 输入为nv12格式图像时，Jpeg编码质量，mjpeg图像输入可忽略      | 否       | 95                             |                                                              |
-| smart_topic  | 订阅的智能结果topic                                          | 否       | "/hobot_mono2d_body_detection" |                                                              |
-| smart_height | 智能结果对应的图像高                                         | 否       | 1080                           |                                                              |
-| smart_width  | 智能结果对应的图像宽                                         | 否       | 1920                           |                                                              |
+| 参数名          | 解释                                                         | 是否必须 | 默认值                         | 备注 |
+| --------------- | ------------------------------------------------------------ | -------- | ------------------------------ | ---- |
+| image_topic     | 订阅的图像topic                                              | 否       | "/image_jpeg"                  |      |
+| image_type      | image消息类型，可选项为"mjpeg", "mjpeg_shared_mem"<br />"mjpeg"：`sensor_msgs::msg::Image`类型jpeg图像<br />"mjpeg_shared_mem"：`hbm_img_msgs::msg::HbmMsg1080P`使用零拷贝的jpeg图像 | 否       | "mjpeg"                         |      |
+| only_show_image | 是否只显示视频                                               | 否       | false                          |      |
+| smart_topic     | 订阅的智能结果topic                                          | 否       | "/hobot_mono2d_body_detection" |      |
 
 #### 运行
 
@@ -47,7 +43,7 @@ websocket node支持通过parameters设置输入的topic以及图像数据类型
 启动hobot sensor，输出hbmem的nv12类型图像
 
 ```shell
-ros2 run mipi_cam mipi_cam --ros-args -p video_device:=F37 -p out_format:=nv12 -p io_method:=hbmem --log-level warn
+ros2 run mipi_cam mipi_cam --ros-args -p video_device:=F37 -p out_format:=nv12 -p io_method:=shared_mem --log-level warn
 ```
 
 启动mono2d_body_detection算法
@@ -57,10 +53,18 @@ ros2 run mipi_cam mipi_cam --ros-args -p video_device:=F37 -p out_format:=nv12 -
 ros2 run mono2d_body_detection mono2d_body_detection --ros-args -p model_file_name:=/opt/tros/lib/mono2d_body_detection/config/multitask_body_kps_960x544.hbm --log-level warn
 ```
 
+运行hobot codec节点
+
+~~~shell
+ros2 run hobot_codec hobot_codec_republish --ros-args -p channel:=0 -p in_mode:=shared_mem -p in_format:=nv12 -p out_mode:=ros -p out_format:=jpeg -p sub_topic:=/hbmem_img -p pub_topic:=/image_jpeg
+~~~
+
+
+
 然后运行websocket节点
 
 ```shell
-ros2 run websocket websocket --ros-args -p image_topic:=/hbmem_img -p image_type:=nv12_hbmem
+ros2 run websocket websocket
 ```
 
 ### 结果分析
