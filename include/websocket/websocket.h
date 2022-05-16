@@ -81,7 +81,7 @@ class Websocket {
   uint64_t frame_id_ = 0;
 
   std::string image_topic_name_ = "/image_jpeg";
-  std::string image_type_ = "jpeg";
+  std::string image_type_ = "mjpeg";
   std::string smart_topic_name_ = "/hobot_mono2d_body_detection";
 
   bool only_show_image_ = false;
