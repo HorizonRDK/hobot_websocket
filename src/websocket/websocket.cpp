@@ -15,15 +15,15 @@ std::map<int, std::string> gesture_map{{0, ""},
                                        {2, "Thumb Up"},
                                        {3, "Victory"},
                                        {4, "Mute"},
-                                       {5, "Palm Move"},
+                                       {5, "Palm"},
                                        {6, "IndexFingerAntiClockwise"},
                                        {7, "IndexFingerClockwise"},
                                        {8, "Pinch"},
                                        {9, "Palmpat"},
-                                       {10, "Palm"},
+                                       {10, "Palm Move"},
                                        {11, "Okay"},
-                                       {12, "ThumbRight"},
-                                       {13, "ThumbLeft"},
+                                       {12, "ThumbLeft"},
+                                       {13, "ThumbRight"},
                                        {14, "Awesome"},
                                        {15, "PinchMove"},
                                        {16, "PinchAntiClockwise"},
@@ -217,6 +217,11 @@ int Websocket::FrameAddSmart(
     auto target = smart->add_targets_();
     target->set_track_id_(smart_target.track_id);
     target->set_type_(smart_target.type);
+
+    if (smart_target.rois.size() == 1 &&
+    !smart_target.rois.front().type.empty()) {
+      target->set_type_(smart_target.rois.front().type);
+    }
 
     // rois
     for (auto smart_roi : smart_target.rois) {
