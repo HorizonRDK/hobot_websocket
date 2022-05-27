@@ -204,6 +204,14 @@ int Websocket::FrameAddSmart(
   proto_frame_message.set_sequence_id_(frame_id_++);
 
   auto static_msg = proto_frame_message.mutable_statistics_msg_();
+  
+  auto ts_attr = static_msg->add_attributes_();
+  ts_attr->set_type_("stamp");
+  ts_attr->set_value_(smart_msg->header.stamp.sec * 1000 +
+                      smart_msg->header.stamp.nanosec / 1000 / 1000);
+  ts_attr->set_value_string_(std::to_string(smart_msg->header.stamp.sec) + "_" +
+       std::to_string(smart_msg->header.stamp.nanosec));
+
   auto fps_attrs = static_msg->add_attributes_();
   fps_attrs->set_type_("fps");
   fps_attrs->set_value_(smart_msg->fps);
@@ -228,8 +236,8 @@ int Websocket::FrameAddSmart(
       auto proto_box = target->add_boxes_();
       proto_box->set_type_(smart_roi.type);
       auto point1 = proto_box->mutable_top_left_();
-      point1->set_x_(smart_roi.rect.x_offset);
-      point1->set_y_(smart_roi.rect.y_offset);
+      point1->set_x_(smart_roi.rect.x_offset < 1 ? 1 : smart_roi.rect.x_offset);
+      point1->set_y_(smart_roi.rect.y_offset < 1 ? 1 : smart_roi.rect.y_offset);
       // point1->set_score_(1.0);
       auto point2 = proto_box->mutable_bottom_right_();
       point2->set_x_(smart_roi.rect.x_offset + smart_roi.rect.width);
