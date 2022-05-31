@@ -95,6 +95,8 @@ websocket接收图像消息和智能结果消息，根据时间戳进行匹配�
 
 ### **Ubuntu**
 
+#### 方式1，ros2 run运行
+
 source setup.bash
 
 ~~~shell
@@ -139,6 +141,16 @@ ros2 run mono2d_body_detection mono2d_body_detection --ros-args --log-level erro
 ~~~shell
 ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
 ~~~
+
+#### 方式2，launch文件启动
+
+```shell
+export COLCON_CURRENT_PREFIX=./install
+source ./install/setup.bash
+
+# 已在脚本中启动webserver服务，并切换到mono2d_body_detection目录，不需再拷贝config文件夹到当前目录
+ros2 launch websocket hobot_websocket.launch.py
+```
 
 ### **Linux**
 
