@@ -85,13 +85,13 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
   }
 
   if (image_type_ == "mjpeg") {
-    RCLCPP_INFO(nh_->get_logger(), "Websocket using image jpeg");
+    RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg");
     using_hbmem_image_ = false;
     image_sub_ = nh_->create_subscription<sensor_msgs::msg::Image>(
         image_topic_name_, 10,
         std::bind(&Websocket::OnGetJpegImage, this, std::placeholders::_1));
   } else if (image_type_ == "mjpeg_shared_mem") {
-    RCLCPP_INFO(nh_->get_logger(), "Websocket using image jpeg shared memory");
+    RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg shared memory");
     using_hbmem_image_ = true;
     image_hbmem_sub_ =
         nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
@@ -199,18 +199,20 @@ void Websocket::OnGetSmartMessage(
 int Websocket::FrameAddSmart(
     x3::FrameMessage &proto_frame_message,
     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg) {
-  proto_frame_message.set_timestamp_(smart_msg->header.stamp.sec * 1000000000 +
-                                     smart_msg->header.stamp.nanosec);
+  proto_frame_message.set_timestamp_(
+      static_cast<uint64_t>(smart_msg->header.stamp.sec) * 1000000000 +
+      smart_msg->header.stamp.nanosec);
   proto_frame_message.set_sequence_id_(frame_id_++);
 
   auto static_msg = proto_frame_message.mutable_statistics_msg_();
-  
+
   auto ts_attr = static_msg->add_attributes_();
   ts_attr->set_type_("stamp");
-  ts_attr->set_value_(smart_msg->header.stamp.sec * 1000 +
+  ts_attr->set_value_(static_cast<uint64_t>(smart_msg->header.stamp.sec) *
+                          1000 +
                       smart_msg->header.stamp.nanosec / 1000 / 1000);
   ts_attr->set_value_string_(std::to_string(smart_msg->header.stamp.sec) + "_" +
-       std::to_string(smart_msg->header.stamp.nanosec));
+                             std::to_string(smart_msg->header.stamp.nanosec));
 
   auto fps_attrs = static_msg->add_attributes_();
   fps_attrs->set_type_("fps");
@@ -218,7 +220,8 @@ int Websocket::FrameAddSmart(
   fps_attrs->set_value_string_(std::to_string(smart_msg->fps));
 
   auto smart = proto_frame_message.mutable_smart_msg_();
-  smart->set_timestamp_(smart_msg->header.stamp.sec * 1000000000 +
+  smart->set_timestamp_(static_cast<uint64_t>(smart_msg->header.stamp.sec) *
+                            1000000000 +
                         smart_msg->header.stamp.nanosec);
   smart->set_error_code_(0);
   for (auto smart_target : smart_msg->targets) {
@@ -227,7 +230,7 @@ int Websocket::FrameAddSmart(
     target->set_type_(smart_target.type);
 
     if (smart_target.rois.size() == 1 &&
-    !smart_target.rois.front().type.empty()) {
+        !smart_target.rois.front().type.empty()) {
       target->set_type_(smart_target.rois.front().type);
     }
 
@@ -303,7 +306,8 @@ int Websocket::FrameAddSmart(
 
 int Websocket::FrameAddImage(x3::FrameMessage &msg_send,
                              sensor_msgs::msg::Image::SharedPtr frame_msg) {
-  msg_send.set_timestamp_(frame_msg->header.stamp.sec * 1000000000 +
+  msg_send.set_timestamp_(static_cast<uint64_t>(frame_msg->header.stamp.sec) *
+                              1000000000 +
                           frame_msg->header.stamp.nanosec);
   auto image = msg_send.mutable_img_();
   image->set_buf_((const char *)frame_msg->data.data(), frame_msg->data.size());
@@ -397,10 +401,10 @@ void Websocket::MessageProcess() {
           }
           x3_smart_msg_.pop();
           x3_frames_.pop();
-        } else if ((msg->header.stamp.sec * 1000000000 +
-                    msg->header.stamp.nanosec) >
-                   (frame->header.stamp.sec * 1000000000 +
-                    frame->header.stamp.nanosec)) {
+        } else if ((msg->header.stamp.sec > frame->header.stamp.sec) ||
+                   ((msg->header.stamp.sec == frame->header.stamp.sec) &&
+                    (msg->header.stamp.nanosec >
+                     frame->header.stamp.nanosec))) {
           x3_frames_.pop();
         } else {
           x3_smart_msg_.pop();
@@ -410,10 +414,10 @@ void Websocket::MessageProcess() {
 
     if (x3_smart_msg_.size() > 20) {
       RCLCPP_WARN(nh_->get_logger(),
-                  "web socket has cache smart message nun > 20");
+                  "web socket has cache smart message num > 20");
     }
     if (x3_frames_.size() > 20) {
-      RCLCPP_WARN(nh_->get_logger(), "web socket has cache image nun > 20");
+      RCLCPP_WARN(nh_->get_logger(), "web socket has cache image num > 20");
     }
   }
 }

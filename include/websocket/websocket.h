@@ -26,15 +26,17 @@ namespace websocket {
 struct compare_frame {
   bool operator()(const sensor_msgs::msg::Image::SharedPtr f1,
                   const sensor_msgs::msg::Image::SharedPtr f2) {
-    return ((f1->header.stamp.sec * 1000000000 + f1->header.stamp.nanosec) >
-            (f2->header.stamp.sec * 1000000000 + f2->header.stamp.nanosec));
+    return ((f1->header.stamp.sec > f2->header.stamp.sec) ||
+            ((f1->header.stamp.sec == f2->header.stamp.sec) &&
+             (f1->header.stamp.nanosec > f2->header.stamp.nanosec)));
   }
 };
 struct compare_msg {
   bool operator()(const ai_msgs::msg::PerceptionTargets::SharedPtr m1,
                   const ai_msgs::msg::PerceptionTargets::SharedPtr m2) {
-    return ((m1->header.stamp.sec * 1000000000 + m1->header.stamp.nanosec) >
-            (m2->header.stamp.sec * 1000000000 + m2->header.stamp.nanosec));
+    return ((m1->header.stamp.sec > m2->header.stamp.sec) ||
+            ((m1->header.stamp.sec == m2->header.stamp.sec) &&
+             (m1->header.stamp.nanosec > m2->header.stamp.nanosec)));
   }
 };
 

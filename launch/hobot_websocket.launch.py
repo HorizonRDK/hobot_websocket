@@ -85,6 +85,6 @@ def generate_launch_description():
                 {"only_show_image": False},
                 {"smart_topic": "/hobot_mono2d_body_detection"}
             ],
-            arguments=['--ros-args', '--log-level', 'error']
+            arguments=['--ros-args', '--log-level', 'info']
         )
     ])
