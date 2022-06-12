@@ -407,23 +407,48 @@ void Websocket::MessageProcess() {
           }
           x3_smart_msg_.pop();
           x3_frames_.pop();
-        } else if ((msg->header.stamp.sec > frame->header.stamp.sec) ||
-                   ((msg->header.stamp.sec == frame->header.stamp.sec) &&
-                    (msg->header.stamp.nanosec >
-                     frame->header.stamp.nanosec))) {
-          x3_frames_.pop();
         } else {
-          x3_smart_msg_.pop();
+          // avoid smart or image result lost
+          while (x3_smart_msg_.size() > 20) {
+            auto msg_inner = x3_smart_msg_.top();
+            auto frame_inner = x3_frames_.top();
+            if ((frame_inner->header.stamp.sec > msg_inner->header.stamp.sec) ||
+                ((frame_inner->header.stamp.sec == msg_inner->header.stamp.sec)
+                  && (frame_inner->header.stamp.nanosec >
+                      msg_inner->header.stamp.nanosec))) {
+              // 消息对应的图片一直没有过来，删除消息
+              x3_smart_msg_.pop();
+            } else {
+              break;
+            }
+          }
+          while (x3_frames_.size() > 20) {
+            auto msg_inner = x3_smart_msg_.top();
+            auto frame_inner = x3_frames_.top();
+            if ((msg_inner->header.stamp.sec > frame_inner->header.stamp.sec) ||
+                ((msg_inner->header.stamp.sec == frame_inner->header.stamp.sec)
+                 && (msg_inner->header.stamp.nanosec >
+                     frame_inner->header.stamp.nanosec))) {
+              // 图像对应的消息一直没有过来，删除图像
+              x3_frames_.pop();
+            } else {
+              break;
+            }
+          }
+
+          break;
         }
       }
     }
 
     if (x3_smart_msg_.size() > 20) {
-      RCLCPP_WARN(nh_->get_logger(),
-                  "web socket has cache smart message num > 20");
+      RCLCPP_ERROR(nh_->get_logger(),
+        "web socket has cache smart message num > 20, size %d",
+          x3_smart_msg_.size());
     }
     if (x3_frames_.size() > 20) {
-      RCLCPP_WARN(nh_->get_logger(), "web socket has cache image num > 20");
+      RCLCPP_ERROR(nh_->get_logger(),
+        "web socket has cache image num > 20, size %d", x3_frames_.size());
     }
   }
 }
