@@ -442,13 +442,26 @@ void Websocket::MessageProcess() {
     }
 
     if (x3_smart_msg_.size() > 20) {
-      RCLCPP_ERROR(nh_->get_logger(),
+      RCLCPP_WARN(nh_->get_logger(),
         "web socket has cache smart message num > 20, size %d",
           x3_smart_msg_.size());
     }
     if (x3_frames_.size() > 20) {
-      RCLCPP_ERROR(nh_->get_logger(),
+      RCLCPP_WARN(nh_->get_logger(),
         "web socket has cache image num > 20, size %d", x3_frames_.size());
+    }
+
+    if (x3_smart_msg_.size() > 100) {
+      x3_smart_msg_.pop();
+      RCLCPP_ERROR(nh_->get_logger(),
+                   "web socket has cache smart message num > 100, drop the "
+                   "oldest smart message");
+    }
+    if (x3_frames_.size() > 100) {
+      x3_frames_.pop();
+      RCLCPP_ERROR(nh_->get_logger(),
+                   "web socket has cache image num > 100, drop the oldest "
+                   "image message");
     }
   }
 }
