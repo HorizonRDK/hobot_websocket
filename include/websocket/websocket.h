@@ -95,6 +95,9 @@ class Websocket {
   bool only_show_image_ = false;
   bool using_hbmem_image_ = false;
 
+  bool has_get_image_message_ = false;
+  bool has_get_smart_message_ = false;
+
   int FrameAddImage(x3::FrameMessage &msg_send,
                     sensor_msgs::msg::Image::SharedPtr frame_msg);
   int FrameAddSmart(x3::FrameMessage &proto_frame_message,
