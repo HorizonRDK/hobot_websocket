@@ -444,8 +444,8 @@ void Websocket::MessageProcess() {
       while (!x3_smart_msg_.empty() && !x3_frames_.empty()) {
         auto msg = x3_smart_msg_.top();
         auto frame = x3_frames_.top();
-        lock.unlock();
         if (msg->header.stamp == frame->header.stamp) {
+          lock.unlock();
           int task_num = data_send_thread_.GetTaskNum();
           if (task_num < 3) {
             data_send_thread_.PostTask(
@@ -458,15 +458,8 @@ void Websocket::MessageProcess() {
                    ((msg->header.stamp.sec == frame->header.stamp.sec) &&
                     (msg->header.stamp.nanosec >
                      frame->header.stamp.nanosec))) {
-          int task_num = data_send_thread_.GetTaskNum();
-          if (task_num < 3) {
-            data_send_thread_.PostTask(
-                std::bind(&Websocket::SendImageMessage, this, frame));
-          }
-          lock.lock();
           x3_frames_.pop();
         } else {
-          lock.lock();
           x3_smart_msg_.pop();
         }
       }
