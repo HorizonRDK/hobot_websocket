@@ -255,6 +255,25 @@ int Websocket::FrameAddSmart(
 
   auto static_msg = proto_frame_message.mutable_statistics_msg_();
 
+  auto fps_attrs = static_msg->add_attributes_();
+  fps_attrs->set_type_("fps");
+  fps_attrs->set_value_(smart_msg->fps);
+  fps_attrs->set_value_string_(std::to_string(smart_msg->fps));
+
+  // 找到最长耗时
+  int smart_delay = 0;
+  for (const auto& perf : smart_msg->perfs) {
+    if (static_cast<int>(perf.time_ms_duration) > smart_delay) {
+      smart_delay = static_cast<int>(perf.time_ms_duration);
+    }
+  }
+  if (smart_delay > 0) {
+    auto smart_delay_attrs = static_msg->add_attributes_();
+    smart_delay_attrs->set_type_("ai_delay");
+    smart_delay_attrs->set_value_(smart_delay);
+    smart_delay_attrs->set_value_string_(std::to_string(smart_delay));
+  }
+
   auto ts_attr = static_msg->add_attributes_();
   ts_attr->set_type_("stamp");
   ts_attr->set_value_(static_cast<uint64_t>(smart_msg->header.stamp.sec) *
@@ -262,11 +281,6 @@ int Websocket::FrameAddSmart(
                       smart_msg->header.stamp.nanosec / 1000 / 1000);
   ts_attr->set_value_string_(std::to_string(smart_msg->header.stamp.sec) + "_" +
                              std::to_string(smart_msg->header.stamp.nanosec));
-
-  auto fps_attrs = static_msg->add_attributes_();
-  fps_attrs->set_type_("fps");
-  fps_attrs->set_value_(smart_msg->fps);
-  fps_attrs->set_value_string_(std::to_string(smart_msg->fps));
 
   auto smart = proto_frame_message.mutable_smart_msg_();
   smart->set_timestamp_(static_cast<uint64_t>(smart_msg->header.stamp.sec) *
@@ -391,7 +405,11 @@ int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
   ifs.open(temp_file.c_str());
   ss << ifs.rdbuf();
   ss >> str;
-
+  if (str.size() > 3) {
+    // 转成以摄氏度为单位，保留3位有效数字
+    str = str.substr(0, 3);
+    str.insert(2, ".");
+  }
   auto temp_attrs = Statistics_msg_->add_attributes_();
   temp_attrs->set_type_("temp");
   temp_attrs->set_value_string_(str.c_str());
