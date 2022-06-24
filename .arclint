@@ -12,6 +12,7 @@
             "flags": ["--extensions=h,h++,hh,hpp,hxx,cc,c++,cpp,cxx,C"],
             "include": ["(\\.h$)", "(\\.h++)", "(\\.hh)","(\\.hpp$)",  "(\\.hxx$)", "(\\.cc$)", "(\\.c++$)", "(\\.cpp$)", "(\\.cxx$)","(\\.C$)"],
             "exclude": [
+                "(third_party/uWebSockets/include)"
                 ]
         },
         "golang": {
@@ -31,6 +32,7 @@
             "flags": ["--extensions=h,c"],
             "include": ["(\\.h$)", "(\\.c$)"],
             "exclude": [
+                "(third_party/uWebSockets/include)"
                 ]
         }
     }

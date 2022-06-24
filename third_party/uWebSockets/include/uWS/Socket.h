@@ -2,6 +2,8 @@
 #define SOCKET_UWS_H
 
 #include "Networking.h"
+#include <iostream>
+#include <mutex>
 
 namespace uS {
 
@@ -45,27 +47,30 @@ protected:
         };
 
         Message *head = nullptr, *tail = nullptr;
-        void pop()
-        {
-            Message *nextMessage;
-            if ((nextMessage = head->nextMessage)) {
-                delete [] (char *) head;
-                head = nextMessage;
-            } else {
-                delete [] (char *) head;
-                head = tail = nullptr;
-            }
+        void pop() {
+          Message *nextMessage;
+          if ((nextMessage = head->nextMessage)) {
+            delete[](char *) head;
+            head = nextMessage;
+          } else {
+            delete[](char *) head;
+            head = tail = nullptr;
+          }
         }
 
-        bool empty() {return head == nullptr;}
-        Message *front() {return head;}
+        bool empty() {
+          return head == nullptr;
+        }
+        Message *front() {
+          return head;
+        }
 
         void push(Message *message)
         {
-            message->nextMessage = nullptr;
-            if (tail) {
-                tail->nextMessage = message;
-                tail = message;
+          message->nextMessage = nullptr;
+          if (tail) {
+            tail->nextMessage = message;
+            tail = message;
             } else {
                 head = message;
                 tail = message;
@@ -218,48 +223,50 @@ protected:
         Socket *socket = (Socket *) p;
         NodeData *nodeData = socket->nodeData;
         Context *netContext = nodeData->netContext;
-
         if (status < 0) {
-            STATE::onEnd((Socket *) p);
-            return;
+          STATE::onEnd((Socket *)p);
+          return;
         }
-
         if (events & UV_WRITABLE) {
-            if (!socket->messageQueue.empty() && (events & UV_WRITABLE)) {
-                socket->cork(true);
-                while (true) {
-                    Queue::Message *messagePtr = socket->messageQueue.front();
-                    ssize_t sent = ::send(socket->getFd(), messagePtr->data, messagePtr->length, MSG_NOSIGNAL);
-                    if (sent == (ssize_t) messagePtr->length) {
-                        if (messagePtr->callback) {
-                            messagePtr->callback(p, messagePtr->callbackData, false, messagePtr->reserved);
-                        }
-                        socket->messageQueue.pop();
-                        if (socket->messageQueue.empty()) {
-                            // todo, remove bit, don't set directly
-                            socket->change(socket->nodeData->loop, socket, socket->setPoll(UV_READABLE));
-                            break;
-                        }
-                    } else if (sent == SOCKET_ERROR) {
-                        if (!netContext->wouldBlock()) {
-                            STATE::onEnd((Socket *) p);
-                            return;
-                        }
-                        break;
-                    } else {
-                        messagePtr->length -= sent;
-                        messagePtr->data += sent;
-                        break;
-                    }
+          if (!socket->messageQueue.empty() && (events & UV_WRITABLE)) {
+            socket->cork(true);
+            while (true) {
+              Queue::Message *messagePtr = socket->messageQueue.front();
+              ssize_t sent = ::send(socket->getFd(), messagePtr->data,
+                                    messagePtr->length, MSG_NOSIGNAL);
+              if (sent == (ssize_t)messagePtr->length) {
+                if (messagePtr->callback) {
+                  messagePtr->callback(p, messagePtr->callbackData, false,
+                                       messagePtr->reserved);
                 }
-                socket->cork(false);
+                socket->messageQueue.pop();
+                if (socket->messageQueue.empty()) {
+                  // todo, remove bit, don't set directly
+                  socket->change(socket->nodeData->loop, socket,
+                                 socket->setPoll(UV_READABLE));
+                  break;
+                }
+              } else if (sent == SOCKET_ERROR) {
+                if (!netContext->wouldBlock()) {
+                  STATE::onEnd((Socket *)p);
+                  return;
+                }
+                break;
+              } else {
+                messagePtr->length -= sent;
+                messagePtr->data += sent;
+                break;
+              }
             }
+            socket->cork(false);
+          }
         }
 
         if (events & UV_READABLE) {
-            int length = (int) recv(socket->getFd(), nodeData->recvBuffer, nodeData->recvLength, 0);
-            if (length > 0) {
-                STATE::onData((Socket *) p, nodeData->recvBuffer, length);
+          int length = (int)recv(socket->getFd(), nodeData->recvBuffer,
+                                 nodeData->recvLength, 0);
+          if (length > 0) {
+            STATE::onData((Socket *)p, nodeData->recvBuffer, length);
             } else if (length <= 0 || (length == SOCKET_ERROR && !netContext->wouldBlock())) {
                 STATE::onEnd((Socket *) p);
             }
@@ -334,8 +341,8 @@ protected:
                         return false;
                     }
                 } else {
-                    message->length -= sent;
-                    message->data += sent;
+                  message->length -= sent;
+                  message->data += sent;
                 }
 
                 if ((getPoll() & UV_WRITABLE) == 0) {
@@ -402,11 +409,13 @@ protected:
                 }
             }
         } else {
+            /*
             Queue::Message *messagePtr = allocMessage(estimatedLength - sizeof(Queue::Message));
             messagePtr->length = T::transform(message, (char *) messagePtr->data, length, transformData);
             messagePtr->callback = callback;
             messagePtr->callbackData = callbackData;
             enqueue(messagePtr);
+            */
         }
     }
 
