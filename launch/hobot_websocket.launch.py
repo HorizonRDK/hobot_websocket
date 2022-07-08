@@ -89,6 +89,7 @@ def generate_launch_description():
                 {"image_topic": "/image_jpeg"},
                 {"image_type": "mjpeg"},
                 {"only_show_image": False},
+                {"output_fps": 10},
                 {"smart_topic": "/hobot_mono2d_body_detection"}
             ],
             arguments=['--ros-args', '--log-level', 'info']

@@ -68,26 +68,30 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
                                       smart_topic_descriptor);
 
   nh_->declare_parameter<bool>("only_show_image", only_show_image_);
+  nh_->declare_parameter<int>("output_fps", output_fps_);
 
   nh_->get_parameter<std::string>("image_topic", image_topic_name_);
   nh_->get_parameter<std::string>("image_type", image_type_);
   nh_->get_parameter<std::string>("smart_topic", smart_topic_name_);
 
   nh_->get_parameter<bool>("only_show_image", only_show_image_);
+  nh_->get_parameter<int>("output_fps", output_fps_);
 
   if (only_show_image_) {
     RCLCPP_INFO_STREAM(nh_->get_logger(),
                        "\nParameter:"
                            << "\n image_topic: " << image_topic_name_
                            << "\n image_type: " << image_type_
-                           << "\n only_show_image: " << only_show_image_);
+                           << "\n only_show_image: " << only_show_image_
+                           << "\n output_fps: " << output_fps_);
   } else {
     RCLCPP_INFO_STREAM(nh_->get_logger(),
                        "\nParameter:"
                            << "\n image_topic: " << image_topic_name_
                            << "\n image_type: " << image_type_
                            << "\n only_show_image: " << only_show_image_
-                           << "\n smart_topic: " << smart_topic_name_);
+                           << "\n smart_topic: " << smart_topic_name_
+                           << "\n output_fps: " << output_fps_);
   }
 
   if (image_type_ == "mjpeg") {
@@ -417,6 +421,15 @@ int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
 }
 
 int Websocket::SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg) {
+  // fps control
+  if (output_fps_ >0 && output_fps_ <= 30) {
+    send_frame_count_++;
+    if (send_frame_count_ % (30 / output_fps_) != 0) {
+      return 0;
+    }
+    if (send_frame_count_ >= 1000) send_frame_count_ = 0;
+  }
+
   x3::FrameMessage msg_send;
   FrameAddSystemInfo(msg_send);
   FrameAddImage(msg_send, frame_msg);
@@ -429,6 +442,15 @@ int Websocket::SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg) {
 int Websocket::SendImageSmartMessage(
     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
     sensor_msgs::msg::Image::SharedPtr frame_msg) {
+  // fps control
+  if (output_fps_ >0 && output_fps_ <= 30) {
+    send_frame_count_++;
+    if (send_frame_count_ % (30 / output_fps_) != 0) {
+      return 0;
+    }
+    if (send_frame_count_ >= 1000) send_frame_count_ = 0;
+  }
+
   x3::FrameMessage msg_send;
   FrameAddSystemInfo(msg_send);
   FrameAddImage(msg_send, frame_msg);
