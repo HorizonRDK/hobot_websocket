@@ -443,7 +443,7 @@ int Websocket::SendImageSmartMessage(
     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
     sensor_msgs::msg::Image::SharedPtr frame_msg) {
   // fps control
-  if (output_fps_ >0 && output_fps_ <= 30) {
+  if (output_fps_ > 0 && output_fps_ <= 30) {
     send_frame_count_++;
     if (send_frame_count_ % (30 / output_fps_) != 0) {
       return 0;
