@@ -62,6 +62,8 @@ def generate_launch_description():
 
     if launch_webserver:
         print("launch webserver")
+        pwd_path = os.getcwd()
+        print("pwd_path is ", pwd_path)
         webserver_path = os.path.join(get_package_prefix('websocket'),
                                     "lib/websocket/webservice")
         print("webserver_path is ", webserver_path)
@@ -71,6 +73,7 @@ def generate_launch_description():
         webserver = nginx + " -p ."
         print("launch webserver cmd is ", webserver)
         os.system(webserver)
+        os.chdir(pwd_path)
     else:
         print("webserver has launch")
 
