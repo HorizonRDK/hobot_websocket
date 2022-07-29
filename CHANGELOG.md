@@ -1,5 +1,9 @@
 # Changelog for package websocket
 
+hhp_1.0.4 (2022-07-29)
+------------------
+1. Web页面显示的标题名由OpenExplorer改为TogetherROS。
+
 v1.0.2 (2022-07-08)
 ------------------
 1. 修复第一次启动webservice服务情况下，启动完成后未切回原运行路径，导致算法模型加载失败的问题。
