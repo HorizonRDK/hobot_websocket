@@ -352,7 +352,10 @@ int Websocket::FrameAddSmart(
         pt_type = "hand_landmarks";
       } else if (smart_points.type == "face_kps") {
         pt_type = "lmk_106pts";
+      } else {
+        pt_type = smart_points.type;
       }
+
       proto_points->set_type_(pt_type);
       for (auto smart_point : smart_points.point) {
         auto point = proto_points->add_points_();
