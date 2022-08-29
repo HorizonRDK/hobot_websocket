@@ -1,5 +1,9 @@
 # Changelog for package websocket
 
+hhp_1.0.6 (2022-08-29)
+------------------
+1. 新增Web页面可视化全图分割“segmentation”渲染。
+
 hhp_1.0.4 (2022-07-29)
 ------------------
 1. Web页面显示的标题名由OpenExplorer改为TogetherROS。
