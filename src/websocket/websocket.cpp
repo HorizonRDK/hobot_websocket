@@ -363,9 +363,22 @@ int Websocket::FrameAddSmart(
     }
 
     // captures
-    // for (auto smart_captures : smart_target.captures) {
-    //     auto captures_ = target->add_captures_();
-    // }
+    for (auto smart_captures : smart_target.captures) {
+        int width = smart_captures.img.width;
+        int height = smart_captures.img.height;
+        if(smart_target.type == "parking_space"){
+          auto float_matrixs = target->add_float_matrixs_();
+          float_matrixs->set_type_("segmentation");
+          int index = 0;
+          for(int i = 0; i < height; i++){
+            auto arrays = float_matrixs->add_arrays_();
+            for(int j = 0; j < width; j++){
+              index = index + 1;
+              arrays->add_value_(smart_captures.features[index]);
+            }
+          }
+        }
+    }
   }
 
   return 0;
