@@ -118,6 +118,9 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
         smart_topic_name_, 10,
         std::bind(&Websocket::OnGetSmartMessage, this, std::placeholders::_1));
   }
+  get_timer = nh_->create_wall_timer(
+      std::chrono::milliseconds(static_cast<int64_t>(5000)),
+      std::bind(&Websocket::on_get_timer, this));
 }
 
 Websocket::~Websocket() {
@@ -154,11 +157,39 @@ Websocket::~Websocket() {
   uws_server_->DeInit();
 }
 
+void Websocket::on_get_timer() {
+  auto time_now = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  //定时器每隔5s检查一次获取图片和AI数据的时间，如果已经超过5s还未收到，会输出error日志。
+  if (time_now - get_image_time >= 5000) {
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Websocket did not receive image data!"
+                 " Please check whether the image publisher still exists by "
+                 "'topic info'!");
+  }
+  if (time_now - get_smart_time >= 5000) {
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Websocket did not receive AI data!"
+                 " Please check whether the AI data publisher still exists by "
+                 "'topic info'!");
+  }
+  timestamp_lk.unlock();
+}
+
 void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
   if (!has_get_image_message_) {
     has_get_image_message_ = true;
   }
-
+  //获取接收Image时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_image_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
@@ -186,7 +217,13 @@ void Websocket::OnGetJpegImageHbmem(
   if (!has_get_image_message_) {
     has_get_image_message_ = true;
   }
-
+  //获取接收Image时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_image_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
@@ -226,7 +263,13 @@ void Websocket::OnGetSmartMessage(
   if (!has_get_smart_message_) {
     has_get_smart_message_ = true;
   }
-
+  //获取接收AI数据时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_smart_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> smart_lock(smart_mutex_);
     if (smart_stop_flag_) {
