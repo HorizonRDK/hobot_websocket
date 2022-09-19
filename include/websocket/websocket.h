@@ -97,6 +97,11 @@ class Websocket {
 
   bool has_get_image_message_ = false;
   bool has_get_smart_message_ = false;
+  uint64_t get_image_time = 0;
+  uint64_t get_smart_time = 0;
+  std::mutex timestamp_mtx;
+  rclcpp::TimerBase::SharedPtr get_timer;
+  void on_get_timer();
 
   int FrameAddImage(x3::FrameMessage &msg_send,
                     sensor_msgs::msg::Image::SharedPtr frame_msg);

@@ -60,12 +60,12 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
       "image type, supported options: mjpeg, mjpeg_shared_mem";
   rcl_interfaces::msg::ParameterDescriptor smart_topic_descriptor;
   smart_topic_descriptor.description = "smart topic name";
-  nh_->declare_parameter<std::string>("image_topic", image_topic_name_,
-                                      image_topic_descriptor);
-  nh_->declare_parameter<std::string>("image_type", image_type_,
-                                      image_type_descriptor);
-  nh_->declare_parameter<std::string>("smart_topic", smart_topic_name_,
-                                      smart_topic_descriptor);
+  nh_->declare_parameter<std::string>(
+      "image_topic", image_topic_name_, image_topic_descriptor);
+  nh_->declare_parameter<std::string>(
+      "image_type", image_type_, image_type_descriptor);
+  nh_->declare_parameter<std::string>(
+      "smart_topic", smart_topic_name_, smart_topic_descriptor);
 
   nh_->declare_parameter<bool>("only_show_image", only_show_image_);
   nh_->declare_parameter<int>("output_fps", output_fps_);
@@ -98,16 +98,18 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg");
     using_hbmem_image_ = false;
     image_sub_ = nh_->create_subscription<sensor_msgs::msg::Image>(
-        image_topic_name_, 10,
+        image_topic_name_,
+        10,
         std::bind(&Websocket::OnGetJpegImage, this, std::placeholders::_1));
   } else if (image_type_ == "mjpeg_shared_mem") {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg shared memory");
     using_hbmem_image_ = true;
     image_hbmem_sub_ =
         nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
-            image_topic_name_, 10,
-            std::bind(&Websocket::OnGetJpegImageHbmem, this,
-                      std::placeholders::_1));
+            image_topic_name_,
+            10,
+            std::bind(
+                &Websocket::OnGetJpegImageHbmem, this, std::placeholders::_1));
   } else {
     RCLCPP_ERROR(nh_->get_logger(), "Websocket unsupported image type");
     throw std::runtime_error("Websocket unsupported image type");
@@ -115,9 +117,13 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
 
   if (!only_show_image_) {
     ai_msg_sub_ = nh_->create_subscription<ai_msgs::msg::PerceptionTargets>(
-        smart_topic_name_, 10,
+        smart_topic_name_,
+        10,
         std::bind(&Websocket::OnGetSmartMessage, this, std::placeholders::_1));
   }
+  get_timer = nh_->create_wall_timer(
+      std::chrono::milliseconds(static_cast<int64_t>(5000)),
+      std::bind(&Websocket::on_get_timer, this));
 }
 
 Websocket::~Websocket() {
@@ -154,11 +160,41 @@ Websocket::~Websocket() {
   uws_server_->DeInit();
 }
 
+void Websocket::on_get_timer() {
+  auto time_now = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  //定时器每隔5s检查一次获取图片和AI数据的时间，如果已经超过5s还未收到，会输出error日志。
+  if (time_now - get_image_time >= 5000) {
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Websocket did not receive image data!"
+                 " Please check whether the image publisher still exists by "
+                 "'ros2 topic info %s'!",
+                 image_topic_name_.c_str());
+  }
+  if (time_now - get_smart_time >= 5000) {
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Websocket did not receive AI data!"
+                 " Please check whether the AI data publisher still exists by "
+                 "'ros2 topic info %s'!",
+                 smart_topic_name_.c_str());
+  }
+  timestamp_lk.unlock();
+}
+
 void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
   if (!has_get_image_message_) {
     has_get_image_message_ = true;
   }
-
+  //获取接收Image时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_image_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
@@ -186,7 +222,13 @@ void Websocket::OnGetJpegImageHbmem(
   if (!has_get_image_message_) {
     has_get_image_message_ = true;
   }
-
+  //获取接收Image时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_image_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> video_lock(video_mutex_);
     if (video_stop_flag_) {
@@ -226,7 +268,13 @@ void Websocket::OnGetSmartMessage(
   if (!has_get_smart_message_) {
     has_get_smart_message_ = true;
   }
-
+  //获取接收AI数据时间
+  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
+  get_smart_time = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch())
+          .count());
+  timestamp_lk.unlock();
   {
     std::lock_guard<std::mutex> smart_lock(smart_mutex_);
     if (smart_stop_flag_) {
@@ -266,7 +314,7 @@ int Websocket::FrameAddSmart(
 
   // 找到最长耗时
   int smart_delay = 0;
-  for (const auto& perf : smart_msg->perfs) {
+  for (const auto &perf : smart_msg->perfs) {
     if (static_cast<int>(perf.time_ms_duration) > smart_delay) {
       smart_delay = static_cast<int>(perf.time_ms_duration);
     }
@@ -367,20 +415,20 @@ int Websocket::FrameAddSmart(
 
     // captures
     for (auto smart_captures : smart_target.captures) {
-        int width = smart_captures.img.width;
-        int height = smart_captures.img.height;
-        if(smart_target.type == "parking_space"){
-          auto float_matrixs = target->add_float_matrixs_();
-          float_matrixs->set_type_("segmentation");
-          int index = 0;
-          for(int i = 0; i < height; i++){
-            auto arrays = float_matrixs->add_arrays_();
-            for(int j = 0; j < width; j++){
-              index = index + 1;
-              arrays->add_value_(smart_captures.features[index]);
-            }
+      int width = smart_captures.img.width;
+      int height = smart_captures.img.height;
+      if (smart_target.type == "parking_space") {
+        auto float_matrixs = target->add_float_matrixs_();
+        float_matrixs->set_type_("segmentation");
+        int index = 0;
+        for (int i = 0; i < height; i++) {
+          auto arrays = float_matrixs->add_arrays_();
+          for (int j = 0; j < width; j++) {
+            index = index + 1;
+            arrays->add_value_(smart_captures.features[index]);
           }
         }
+      }
     }
   }
 
@@ -406,8 +454,8 @@ int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
   std::string temp_file = "/sys/class/thermal/thermal_zone0/temp";
   std::ifstream ifs(cpu_rate_file.c_str());
   if (!ifs.is_open()) {
-    RCLCPP_ERROR(nh_->get_logger(), "open config file %s failed",
-                 cpu_rate_file.c_str());
+    RCLCPP_ERROR(
+        nh_->get_logger(), "open config file %s failed", cpu_rate_file.c_str());
     return -1;
   }
   std::stringstream ss;
@@ -438,7 +486,7 @@ int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
 
 int Websocket::SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg) {
   // fps control
-  if (output_fps_ >0 && output_fps_ <= 30) {
+  if (output_fps_ > 0 && output_fps_ <= 30) {
     send_frame_count_++;
     if (send_frame_count_ % (30 / output_fps_) != 0) {
       return 0;
