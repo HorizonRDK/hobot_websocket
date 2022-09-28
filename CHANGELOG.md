@@ -1,4 +1,7 @@
 # Changelog for package websocket
+tros_1.1.2 (2022-09-28)
+------------------
+1. 优化websocket输出日志
 
 hhp_1.0.6 (2022-08-29)
 ------------------
