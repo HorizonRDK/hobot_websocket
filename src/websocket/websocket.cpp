@@ -450,7 +450,7 @@ int Websocket::FrameAddImage(x3::FrameMessage &msg_send,
 
 int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
   std::string cpu_rate_file =
-      "/sys/devices/system/cpu/cpufreq/policy0/cpuinfo_cur_freq";
+      "/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq";
   std::string temp_file = "/sys/class/thermal/thermal_zone0/temp";
   std::ifstream ifs(cpu_rate_file.c_str());
   if (!ifs.is_open()) {

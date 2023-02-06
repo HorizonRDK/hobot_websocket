@@ -130,7 +130,7 @@ ros2 run mono2d_body_detection mono2d_body_detection --ros-args --log-level erro
 
 第一次运行要启动webserver服务，运行方法为:
 
-`cd` 到 `install/websocket/lib/websocket/webservice`目录下，然后启动nginx
+`cd` 到 `install/lib/websocket/webservice`目录下，然后启动nginx
 
 ```plaintext
   chmod +x ./sbin/nginx

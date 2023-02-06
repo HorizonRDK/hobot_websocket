@@ -39,24 +39,54 @@ find_package(sensor_msgs REQUIRED)
 find_package(ai_msgs REQUIRED)
 find_package(hbm_img_msgs REQUIRED)
 
-include_directories(
-  include
-  include/websocket
-  include/protobuf
-  include/utils
-  third_party/protobuf/include
-  third_party/uWebSockets/include
-  third_party/openssl/include
-  /usr/include/vio
-  ${CMAKE_SYSROOT}/usr/include/vio)
+set(PLATFORM_ARCH aarch64)
+if(PLATFORM_X3 OR PLATFORM_J5)
+  message("build platform aarch64")
+  set(PLATFORM_ARCH aarch64)
+elseif(PLATFORM_X86)
+  message("build platform X86")
+  set(PLATFORM_ARCH x86_64)
+else()
+  if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+    message("invalid platform, build platform X3 default")
+    set(PLATFORM_ARCH aarch64)
+  elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+    message("build platform X86")
+    set(PLATFORM_ARCH x86_64)
+  endif()
+endif()
 
-link_directories(
-  third_party/protobuf/lib
-  third_party/uWebSockets/lib
-  third_party/openssl/lib
-  /usr/lib/hbmedia
-  ${CMAKE_SYSROOT}/usr/lib/hbmedia)
-  
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+  include_directories(
+    include
+    include/websocket
+    include/protobuf
+    include/utils
+    third_party/aarch64/protobuf/include
+    third_party/aarch64/uWebSockets/include
+    third_party/aarch64/openssl/include
+    /usr/include/vio
+    ${CMAKE_SYSROOT}/usr/include/vio)
+
+  link_directories(
+    third_party/aarch64/protobuf/lib
+    third_party/aarch64/uWebSockets/lib
+    third_party/aarch64/openssl/lib
+    /usr/lib/hbmedia
+    ${CMAKE_SYSROOT}/usr/lib/hbmedia)
+else()
+  include_directories(
+    include
+    include/websocket
+    include/protobuf
+    include/utils
+    third_party/x86/protobuf/include
+    third_party/x86/uWebSockets/include)
+
+  link_directories(
+    third_party/x86/protobuf/lib
+    third_party/x86/uWebSockets/lib)
+endif()
 
 add_executable(websocket
   src/main.cpp
@@ -67,23 +97,40 @@ add_executable(websocket
   src/utils/time_helper.cpp)
 
 ament_target_dependencies(websocket rclcpp sensor_msgs ai_msgs hbm_img_msgs)
-target_link_libraries(websocket uWS ssl crypto z protobuf)
+target_link_libraries(websocket uWS ssl crypto z libprotobuf.a)
 
 install(TARGETS
   websocket
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
-  ${CMAKE_CURRENT_SOURCE_DIR}/webservice
-  DESTINATION lib/${PROJECT_NAME})
+  ${CMAKE_CURRENT_SOURCE_DIR}/webservice/conf
+  DESTINATION lib/${PROJECT_NAME}/webservice)
+install(DIRECTORY
+  ${CMAKE_CURRENT_SOURCE_DIR}/webservice/html
+  DESTINATION lib/${PROJECT_NAME}/webservice)
+install(DIRECTORY
+  ${CMAKE_CURRENT_SOURCE_DIR}/webservice/logs
+  DESTINATION lib/${PROJECT_NAME}/webservice)
+install(DIRECTORY
+  ${CMAKE_CURRENT_SOURCE_DIR}/webservice/x3
+  DESTINATION lib/${PROJECT_NAME}/webservice)
 
-install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/uWebSockets/lib/libuWS.so
-  DESTINATION lib/)
-
-install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf/lib/libprotobuf.so.31
-  DESTINATION lib/)
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/aarch64/uWebSockets/lib/libuWS.so
+    DESTINATION lib/)
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/webservice/sbin/aarch64/nginx
+    DESTINATION lib/${PROJECT_NAME}/webservice/sbin)
+else()
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/x86/uWebSockets/lib/libuWS.so
+    DESTINATION lib/)
+  install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/webservice/sbin/x86/nginx
+    DESTINATION lib/${PROJECT_NAME}/webservice/sbin)
+endif()
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
