@@ -1,6 +1,14 @@
+/**
+ * Copyright (c) 2019, Horizon Robotics, Inc.
+ * All rights reserved.
+ * @Author: xudong.du
+ * @Mail: xudong.du@horizon.ai
+ * @Date: 2020-09-14 15:38:52
+ * @Version: v0.0.1
+ */
 #ifndef SOCKET_UWS_H
 #define SOCKET_UWS_H
-
+#include <mutex>
 #include "Networking.h"
 
 namespace uS {
@@ -43,10 +51,11 @@ protected:
             void (*callback)(void *socket, void *data, bool cancelled, void *reserved) = nullptr;
             void *callbackData = nullptr, *reserved = nullptr;
         };
-
+        int queue_size = 0;
         Message *head = nullptr, *tail = nullptr;
         void pop()
         {
+            --queue_size;
             Message *nextMessage;
             if ((nextMessage = head->nextMessage)) {
                 delete [] (char *) head;
@@ -58,11 +67,22 @@ protected:
         }
 
         bool empty() {return head == nullptr;}
-        Message *front() {return head;}
+        Message *front() {
+          return head;
+        }
 
         void push(Message *message)
         {
-            message->nextMessage = nullptr;
+          message->nextMessage = nullptr;
+          if (queue_size >= 100) {
+            tail->nextMessage = message;
+            tail = message;
+            Message *headMessage;
+            headMessage = head->nextMessage;
+            delete [] (char *) head;
+            head = headMessage;
+          } else {
+            ++queue_size;
             if (tail) {
                 tail->nextMessage = message;
                 tail = message;
@@ -70,6 +90,7 @@ protected:
                 head = message;
                 tail = message;
             }
+          }
         }
     } messageQueue;
 
@@ -402,11 +423,13 @@ protected:
                 }
             }
         } else {
+            /*
             Queue::Message *messagePtr = allocMessage(estimatedLength - sizeof(Queue::Message));
             messagePtr->length = T::transform(message, (char *) messagePtr->data, length, transformData);
             messagePtr->callback = callback;
             messagePtr->callbackData = callbackData;
             enqueue(messagePtr);
+            */
         }
     }
 
