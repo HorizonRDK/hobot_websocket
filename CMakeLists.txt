@@ -39,23 +39,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(ai_msgs REQUIRED)
 find_package(hbm_img_msgs REQUIRED)
 
-set(PLATFORM_ARCH aarch64)
-if(PLATFORM_X3 OR PLATFORM_J5)
-  message("build platform aarch64")
-  set(PLATFORM_ARCH aarch64)
-elseif(PLATFORM_X86)
-  message("build platform X86")
-  set(PLATFORM_ARCH x86_64)
-else()
-  if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
-    message("invalid platform, build platform X3 default")
-    set(PLATFORM_ARCH aarch64)
-  elseif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
-    message("build platform X86")
-    set(PLATFORM_ARCH x86_64)
-  endif()
-endif()
-
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
   include_directories(
     include
