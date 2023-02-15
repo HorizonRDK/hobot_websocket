@@ -2,12 +2,11 @@
 
 # 功能介绍
 
-为了方便预览图像和算法效果，TROS集成了web展示功能，通过网络将图像和算法结果传输到浏览器端，然后进行渲染显示。
+为了方便预览图像和算法效果，TogetherROS集成了web展示功能，通过网络将图像和算法结果传输到浏览器端，然后进行渲染显示。
 
 # 编译
 
 ## 依赖库
-
 
 ros package：
 
@@ -30,10 +29,13 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
  支持在x86/x3 Ubuntu系统上编译以及在x86 Ubuntu上使用docker交叉编译x3可执行程序。
 
 ### x86 Ubuntu平台编译
+
 1. 编译环境确认 
+
    - x86系统为Ubuntu 20.0.4。
    - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
    - 已安装ROS2编译工具colcon，安装命令：`pip install -U colcon-common-extensions`
+
 2. 编译
 
 编译命令：`colcon build --merge-install --packages-select websocket`
@@ -41,9 +43,11 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
 ### x3 Ubuntu平台编译
 
 1. 编译环境确认 
+
    - X3开发板已安装X3 Ubuntu系统。
    - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
    - 已安装ROS2编译工具colcon，安装命令：`pip install -U colcon-common-extensions`
+
 2. 编译
 
 编译命令：`colcon build --merge-install --packages-select websocket`
@@ -58,23 +62,25 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
 
    - 编译命令：
 
-```
-export TARGET_ARCH=aarch64
-export TARGET_TRIPLE=aarch64-linux-gnu
-export CROSS_COMPILE=/usr/bin/$TARGET_TRIPLE-
+   ```
+   export TARGET_ARCH=aarch64
+   export TARGET_TRIPLE=aarch64-linux-gnu
+   export CROSS_COMPILE=/usr/bin/$TARGET_TRIPLE-
 
-colcon build --packages-select websocket \
-   --merge-install \
-   --cmake-force-configure \
-   --cmake-args \
-   --no-warn-unused-cli \
-   -DCMAKE_TOOLCHAIN_FILE=`pwd`/robot_dev_config/aarch64_toolchainfile.cmake
-```
+   colcon build --packages-select websocket \
+      --merge-install \
+      --cmake-force-configure \
+      --cmake-args \
+      --no-warn-unused-cli \
+      -DCMAKE_TOOLCHAIN_FILE=`pwd`/robot_dev_config/aarch64_toolchainfile.cmake
+   ```
 
 ## 注意事项
+
 TogetherROS安装包已包含websocket包，用户可直接使用，不需要单独编译。若用户基于源码开发新功能，则需要单独编译验证。
 
 # 使用介绍
+
 websocket支持在x86 Ubuntu 20.0.4系统，x3 Ubuntu 20.0.4系统和x3 yocto linux系统运行。
 
 ## 依赖
@@ -122,7 +128,6 @@ source ./install/setup.bash
 ~~~shell
 ros2 run hobot_usb_cam hobot_usb_cam --ros-args -p pixel_format:=mjpeg -p image_width:=1280 -p image_height:=720 -p zero_copy:=false -p video_device:="/dev/video0" --log-level error &
 ~~~
-
 
 启动websocket服务
 
@@ -237,7 +242,7 @@ cp -r install/lib/mono2d_body_detection/config/ .
 
 # 结果分析
 
-## X3结果展示
+## 结果LOG展示
 
 ```
 root@ubuntu:~# ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
@@ -255,5 +260,7 @@ Parameter:
 在浏览器端输入http://IP 即可查看图像和算法渲染效果（IP为设备IP地址）
 
 # 常见问题
+
 ## x86 Ubuntu系统启动nginx失败
-nginx服务需要使用80端口，如果端口被占用，则会启动失败。启动失败后使用`sudo netstat -natp | grep 80`命令查看当前占用80端口进程，然后使用`sudo kill <pid>`kill掉该进程，再次启动即可。
+
+nginx服务需要使用80端口，如果端口被占用，则会启动失败。启动失败后使用`sudo netstat -natp | grep 80`命令查看当前占用80端口进程，然后使用`sudo kill <pid>`kill 该进程，再次启动即可。
