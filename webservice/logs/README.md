@@ -1,2 +1,2 @@
-# aiexpress_webserver
+# webserver
 nginx needs logs folder
