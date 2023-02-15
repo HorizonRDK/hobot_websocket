@@ -21,30 +21,18 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
 
 - 编程语言: C/C++
 - 开发平台: X3/X86
-- 系统版本：Ubuntu 20.0.4
+- 系统版本：Ubuntu 20.04
 - 编译工具链:Linux GCC 9.3.0/Linaro GCC 9.3.0
 
 ## 编译
 
- 支持在x86/x3 Ubuntu系统上编译以及在x86 Ubuntu上使用docker交叉编译x3可执行程序。
+ 支持在X3/X86 Ubuntu系统上编译以及在x86 Ubuntu上使用docker交叉编译x3可执行程序。
 
-### x86 Ubuntu平台编译
-
-1. 编译环境确认 
-
-   - x86系统为Ubuntu 20.0.4。
-   - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
-   - 已安装ROS2编译工具colcon，安装命令：`pip install -U colcon-common-extensions`
-
-2. 编译
-
-编译命令：`colcon build --merge-install --packages-select websocket`
-
-### x3 Ubuntu平台编译
+### X3/X86 Ubuntu平台编译
 
 1. 编译环境确认 
 
-   - X3开发板已安装X3 Ubuntu系统。
+   - Ubuntu系统为Ubuntu 20.04。
    - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
    - 已安装ROS2编译工具colcon，安装命令：`pip install -U colcon-common-extensions`
 
@@ -81,7 +69,7 @@ TogetherROS安装包已包含websocket包，用户可直接使用，不需要单
 
 # 使用介绍
 
-websocket支持在x86 Ubuntu 20.0.4系统，x3 Ubuntu 20.0.4系统和x3 yocto linux系统运行。
+websocket支持在X3/X86 Ubuntu 20.04系统和x3 yocto linux系统运行。
 
 ## 依赖
 
