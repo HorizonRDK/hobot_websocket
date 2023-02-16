@@ -1,5 +1,9 @@
 # Changelog for package websocket
 
+tros_1.1.6a (2023-02-16)
+------------------
+1. 适配x86平台
+
 tros_1.1.2rc1 (2022-10-18)
 ------------------
 1. 修复问题：only_show_image为true时，依旧打印未收到AI数据的日志。
