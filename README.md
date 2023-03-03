@@ -123,7 +123,7 @@ ros2 run hobot_usb_cam hobot_usb_cam --ros-args -p pixel_format:=mjpeg -p image_
 
 `cd` 到 `install/lib/websocket/webservice`目录下，然后启动nginx
 
-```plaintext
+```shell
   sudo chmod +x ./sbin/nginx
   sudo ./sbin/nginx -p .
 ```

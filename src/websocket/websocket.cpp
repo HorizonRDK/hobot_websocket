@@ -204,6 +204,7 @@ void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
     }
   }
 
+#if defined  __aarch64__
   if (only_show_image_ || has_get_smart_message_) {
     std::unique_lock<std::mutex> lock(map_smart_mutex_);
     x3_frames_.push(msg);
@@ -215,6 +216,17 @@ void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
     }
     map_smart_condition_.notify_one();
   }
+#elif defined __x86_64__
+  std::unique_lock<std::mutex> lock(map_smart_mutex_);
+  x3_frames_.push(msg);
+  if (x3_frames_.size() > 100) {
+    x3_frames_.pop();
+    RCLCPP_WARN(nh_->get_logger(),
+                "web socket has cache image num > 100, drop the oldest "
+                "image message");
+  }
+  map_smart_condition_.notify_one();
+#endif
 }
 
 void Websocket::OnGetJpegImageHbmem(
@@ -237,6 +249,8 @@ void Websocket::OnGetJpegImageHbmem(
       return;
     }
   }
+
+#if defined  __aarch64__
   if (only_show_image_ || has_get_smart_message_) {
     auto image = std::make_shared<sensor_msgs::msg::Image>();
     image->header.stamp = msg->time_stamp;
@@ -261,6 +275,30 @@ void Websocket::OnGetJpegImageHbmem(
       map_smart_condition_.notify_one();
     }
   }
+#elif defined __x86_64__
+  auto image = std::make_shared<sensor_msgs::msg::Image>();
+  image->header.stamp = msg->time_stamp;
+  image->header.frame_id = "default_cam";
+
+  image->width = msg->width;
+  image->height = msg->height;
+  image->step = msg->width;
+  image->encoding = "jpeg";
+  image->data.resize(msg->data_size);
+  memcpy(image->data.data(), msg->data.data(), msg->data_size);
+
+  {
+    std::unique_lock<std::mutex> lock(map_smart_mutex_);
+    x3_frames_.push(image);
+    if (x3_frames_.size() > 100) {
+      x3_frames_.pop();
+      RCLCPP_WARN(nh_->get_logger(),
+                  "web socket has cache image num > 100, drop the oldest "
+                  "image message");
+    }
+    map_smart_condition_.notify_one();
+  }
+#endif
 }
 
 void Websocket::OnGetSmartMessage(
@@ -545,6 +583,7 @@ void Websocket::MessageProcess() {
         x3_frames_.pop();
       }
     } else {
+#if defined  __aarch64__
       while (!x3_smart_msg_.empty() && !x3_frames_.empty()) {
         auto msg = x3_smart_msg_.top();
         auto frame = x3_frames_.top();
@@ -567,6 +606,34 @@ void Websocket::MessageProcess() {
           x3_smart_msg_.pop();
         }
       }
+#elif defined __x86_64__
+      while (!x3_frames_.empty()) {
+        auto frame = x3_frames_.top();
+        if (x3_smart_msg_.empty()) {
+          lock.unlock();
+          int task_num = data_send_thread_.GetTaskNum();
+          if (task_num < 3) {
+            data_send_thread_.PostTask(
+                std::bind(&Websocket::SendImageMessage, this, frame));
+          }
+          lock.lock();
+          x3_frames_.pop();
+        } else {
+          while (x3_smart_msg_.size() > 1) {
+            x3_smart_msg_.pop();
+          }
+          auto msg = x3_smart_msg_.top();
+          lock.unlock();
+          int task_num = data_send_thread_.GetTaskNum();
+          if (task_num < 3) {
+            data_send_thread_.PostTask(
+                std::bind(&Websocket::SendImageSmartMessage, this, msg, frame));
+          }
+          lock.lock();
+          x3_frames_.pop();
+        }
+      }
+#endif
     }
 
     if (x3_smart_msg_.size() > 20) {
