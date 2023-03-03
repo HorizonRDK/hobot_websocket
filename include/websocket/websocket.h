@@ -117,8 +117,8 @@ class Websocket {
   void MessageProcess(void);
 
   // 通过websocket协议对外输出数据的帧率控制，用于支持在wifi弱网络情况下web端流畅展示
-  // 默认以15fps的速率输出
-  int output_fps_ = 10;
+  // 默认不做帧率控制
+  int output_fps_ = 0;
   int send_frame_count_ = 0;
 };
 

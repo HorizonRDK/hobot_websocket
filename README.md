@@ -95,7 +95,7 @@ websocket接收图像消息和智能结果消息，根据时间戳进行匹配�
 | image_type      | image消息类型       | std::string | "mjpeg"/"mjpeg_shared_mem"<br />"mjpeg"：ros类型jpeg图像<br />"mjpeg_shared_mem"：shared_mem类型jpeg图像 | 否       | "mjpeg"                      |
 | only_show_image | 是否只显示图像      | bool        | true/false                                                   | 否       | false                        |
 | smart_topic     | 订阅的智能结果topic | std::string | 根据实际算法推理节点配置                                     | 否       | /hobot_mono2d_body_detection |
-| output_fps     | 按照指定帧率输出图像 | int | [1, 30]，在此范围外的配置表示不做帧率控制                                     | 否       | 10 |
+| output_fps     | 按照指定帧率输出图像 | int | [1, 30]，在此范围外的配置表示不做帧率控制                                     | 否       | 0（不做帧率控制） |
 
 ## 运行
 
