@@ -171,7 +171,7 @@ function wsInit(i, port) {
   let { socketIP, cameraId, id, netId } = socketParameters;
 
   // 部署
-  hostport = document.location.host;
+  hostport = document.location.hostname;
   socketIP = hostport.replace(/_/g, '.');
   socket = new ReconnectingWebSocket(`ws://${socketIP}:${port}`, null, { binaryType: 'arraybuffer' });
 

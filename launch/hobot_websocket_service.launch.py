@@ -14,6 +14,7 @@
 
 import os
 import stat
+import subprocess
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -55,10 +56,16 @@ ros2 launch websocket hobot_websocket_service.launch.py
 def generate_launch_description():
     # 启动webserver服务
     name = 'nginx'
+    nginx = "./sbin/" + name
+    webserver = nginx + " -p ."
     launch_webserver = True
-    for line in os.popen("ps ax | grep " + name + " | grep -v grep"):
+    # 查询进程列表，获取所有包含 webserver 字符串的进程
+    processes = subprocess.check_output(['ps', 'ax'], universal_newlines=True)
+    processes = [p.strip() for p in processes.split('\n') if webserver in p]
+
+    # 如果有进程，说明目标程序已经在运行
+    if len(processes) > 0:
         launch_webserver = False
-        break
 
     if launch_webserver:
         print("launch webserver")
@@ -68,9 +75,7 @@ def generate_launch_description():
                                     "lib/websocket/webservice")
         print("webserver_path is ", webserver_path)
         os.chdir(webserver_path)
-        nginx = "./sbin/" + name
         os.chmod(nginx, stat.S_IRWXU)
-        webserver = nginx + " -p ."
         print("launch webserver cmd is ", webserver)
         os.system(webserver)
         os.chdir(pwd_path)
