@@ -107,7 +107,6 @@ websocket接收图像消息和智能结果消息，根据时间戳进行匹配�
 source setup.bash
 
 ~~~shell
-export COLCON_CURRENT_PREFIX=./install
 source ./install/setup.bash
 ~~~
 
@@ -138,7 +137,6 @@ ros2 run websocket websocket --ros-args -p image_topic:=/image -p image_type:=mj
 source setup.bash
 
 ~~~shell
-export COLCON_CURRENT_PREFIX=./install
 source ./install/setup.bash
 ~~~
 
@@ -183,7 +181,6 @@ ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_typ
 #### 方式2，launch文件启动
 
 ```shell
-export COLCON_CURRENT_PREFIX=./install
 source ./install/setup.bash
 
 # 已在脚本中启动webserver服务，并切换到mono2d_body_detection目录，不需再拷贝config文件夹到当前目录
@@ -242,7 +239,7 @@ Parameter:
 
 ## web效果展示
 
-使用谷歌浏览器或Edge，输入http://<IP>:8000，即可查看图像和算法渲染效果（IP为设备IP地址）。
+使用谷歌浏览器或Edge，输入http://IP:8000，即可查看图像和算法渲染效果（IP为设备IP地址）。
 
 # 常见问题
 
@@ -250,6 +247,6 @@ Parameter:
 
 webserver服务需要使用8000端口，如果端口被占用，则会启动失败。
 
-可以使用`lsof -i:8000`命令查看8000端口占用进程，使用`kill <PID>`关闭占用8000端口进程，然后再起启动即可。
+可以使用`lsof -i:8000`命令查看8000端口占用进程，使用`kill <PID>`关闭占用8000端口进程，然后重新启动即可。
 
-若用户不想停止当前正在占用8000端口的服务，可以修改**webservice/conf/nginx.conf**文件中的`listen`端口号，改为大于1024且未使用的端口号。注意，修改该端口号后，浏览器端使用的URL也要同步修改。
+若用户不想停止当前正在占用8000端口的服务，可以修改**webservice/conf/nginx.conf**配置文件中的`listen`端口号，改为大于1024且未使用的端口号。注意，修改该端口号后，浏览器端使用的URL也要同步修改。
