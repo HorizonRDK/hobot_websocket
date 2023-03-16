@@ -121,11 +121,8 @@ ros2 run hobot_usb_cam hobot_usb_cam --ros-args -p pixel_format:=mjpeg -p image_
 
 第一次运行要启动webserver服务，运行方法为:
 
-`cd` 到 `install/lib/websocket/webservice`目录下，然后启动nginx
-
 ```shell
-  sudo chmod +x ./sbin/nginx
-  sudo ./sbin/nginx -p .
+ros2 launch websocket hobot_websocket_service.launch.py
 ```
 
 启动websocket节点
@@ -245,10 +242,14 @@ Parameter:
 
 ## web效果展示
 
-在浏览器端输入http://IP 即可查看图像和算法渲染效果（IP为设备IP地址）
+使用谷歌浏览器或Edge，输入http://<IP>:8000，即可查看图像和算法渲染效果（IP为设备IP地址）。
 
 # 常见问题
 
-## x86 Ubuntu系统启动nginx失败
+## 启动webserver失败
 
-nginx服务需要使用80端口，如果端口被占用，则会启动失败。启动失败后使用`sudo netstat -natp | grep 80`命令查看当前占用80端口进程，然后使用`sudo kill <pid>`kill 该进程，再次启动即可。
+webserver服务需要使用8000端口，如果端口被占用，则会启动失败。
+
+可以使用`lsof -i:8000`命令查看8000端口占用进程，使用`kill <PID>`关闭占用8000端口进程，然后再起启动即可。
+
+若用户不想停止当前正在占用8000端口的服务，可以修改**webservice/conf/nginx.conf**文件中的`listen`端口号，改为大于1024且未使用的端口号。注意，修改该端口号后，浏览器端使用的URL也要同步修改。
