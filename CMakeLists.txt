@@ -39,78 +39,97 @@ find_package(sensor_msgs REQUIRED)
 find_package(ai_msgs REQUIRED)
 find_package(hbm_img_msgs REQUIRED)
 
+include_directories(
+  include
+  include/websocket
+  include/protobuf
+  include/utils
+)
+
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
   include_directories(
-    include
-    include/websocket
-    include/protobuf
-    include/utils
     third_party/aarch64/protobuf/include
     third_party/aarch64/uWebSockets/include
     third_party/aarch64/openssl/include
     /usr/include/vio
-    ${CMAKE_SYSROOT}/usr/include/vio)
+    ${CMAKE_SYSROOT}/usr/include/vio
+  )
 
   link_directories(
     third_party/aarch64/protobuf/lib
     third_party/aarch64/uWebSockets/lib
     third_party/aarch64/openssl/lib
     /usr/lib/hbmedia
-    ${CMAKE_SYSROOT}/usr/lib/hbmedia)
+    ${CMAKE_SYSROOT}/usr/lib/hbmedia
+  )
 else()
   include_directories(
-    include
-    include/websocket
-    include/protobuf
-    include/utils
     third_party/x86/protobuf/include
-    third_party/x86/uWebSockets/include)
+    third_party/x86/uWebSockets/include
+  )
 
   link_directories(
     third_party/x86/protobuf/lib
-    third_party/x86/uWebSockets/lib)
+    third_party/x86/uWebSockets/lib
+  )
 endif()
 
-add_executable(websocket
+# Add sources
+set(SOURCES
   src/main.cpp
   src/websocket/websocket.cpp 
   src/server/uws_server.cpp 
   src/protobuf/x3.pb.cc 
   src/utils/threads/threadpool.cpp
-  src/utils/time_helper.cpp)
+  src/utils/time_helper.cpp
+)
 
-ament_target_dependencies(websocket rclcpp sensor_msgs ai_msgs hbm_img_msgs)
-target_link_libraries(websocket uWS ssl crypto z libprotobuf.a)
+# Create executable
+add_executable(websocket ${SOURCES})
 
+# Add dependencies
+ament_target_dependencies(websocket 
+  rclcpp 
+  sensor_msgs 
+  ai_msgs 
+  hbm_img_msgs
+)
+
+# Link libraries
+target_link_libraries(websocket 
+  uWS 
+  ssl 
+  crypto 
+  z 
+  libprotobuf.a
+)
+
+# Install target
 install(TARGETS
   websocket
   DESTINATION lib/${PROJECT_NAME})
 
+# Install webservice
 install(DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/webservice/conf
-  DESTINATION lib/${PROJECT_NAME}/webservice)
-install(DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/webservice/html
-  DESTINATION lib/${PROJECT_NAME}/webservice)
-install(DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/webservice/logs
-  DESTINATION lib/${PROJECT_NAME}/webservice)
-install(DIRECTORY
   ${CMAKE_CURRENT_SOURCE_DIR}/webservice/x3
-  DESTINATION lib/${PROJECT_NAME}/webservice)
+  DESTINATION lib/${PROJECT_NAME}/webservice
+)
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
   install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/aarch64/uWebSockets/lib/libuWS.so
     DESTINATION lib/)
-  install(FILES
+  install(PROGRAMS
     ${CMAKE_CURRENT_SOURCE_DIR}/webservice/sbin/aarch64/nginx
     DESTINATION lib/${PROJECT_NAME}/webservice/sbin)
 else()
   install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/x86/uWebSockets/lib/libuWS.so
     DESTINATION lib/)
-  install(FILES
+  install(PROGRAMS
     ${CMAKE_CURRENT_SOURCE_DIR}/webservice/sbin/x86/nginx
     DESTINATION lib/${PROJECT_NAME}/webservice/sbin)
 endif()

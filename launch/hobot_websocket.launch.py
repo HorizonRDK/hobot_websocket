@@ -15,6 +15,7 @@
 import os
 import stat
 import signal
+import subprocess
 
 from ament_index_python.packages import get_package_prefix
 from launch import LaunchDescription
@@ -24,19 +25,21 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # 启动webserver服务
     name = 'nginx'
-    for line in os.popen("ps ax | grep " + name + " | grep -v grep"):
-        fields = line.split()
-        # extracting Process ID from the output
-        pid = fields[0]
-        # terminating process
-        os.kill(int(pid), signal.SIGKILL)
+    nginx = "./sbin/" + name
+    webserver = nginx + " -p ."
+
+    # 查询进程列表，获取所有包含 webserver 字符串的进程
+    processes = subprocess.check_output(['ps', 'ax'], universal_newlines=True)
+    processes = [p.strip() for p in processes.split('\n') if webserver in p]
+
+    if len(processes) > 0:
+        pid = int(processes[0].split()[0])
+        subprocess.run(['kill', str(pid)])
 
     webserver_path = os.path.join(get_package_prefix('websocket'),
                                   "lib/websocket/webservice")
     os.chdir(webserver_path)
-    nginx = "./sbin/" + name
     os.chmod(nginx, stat.S_IRWXU)
-    webserver = nginx + " -p ."
     os.system(webserver)
 
     # 切换到mono2d_body_detection目录
