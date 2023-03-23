@@ -39,7 +39,7 @@ def generate_launch_description():
     webserver_path = os.path.join(get_package_prefix('websocket'),
                                   "lib/websocket/webservice")
     os.chdir(webserver_path)
-    os.chmod(nginx, stat.S_IRWXU)
+    # os.chmod(nginx, stat.S_IRWXU)
     os.system(webserver)
 
     # 切换到mono2d_body_detection目录

@@ -75,7 +75,7 @@ def generate_launch_description():
                                     "lib/websocket/webservice")
         print("webserver_path is ", webserver_path)
         os.chdir(webserver_path)
-        os.chmod(nginx, stat.S_IRWXU)
+        # os.chmod(nginx, stat.S_IRWXU)
         print("launch webserver cmd is ", webserver)
         os.system(webserver)
         os.chdir(pwd_path)
