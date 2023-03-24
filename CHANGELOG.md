@@ -1,5 +1,10 @@
 # Changelog for package websocket
 
+tros_1.1.6rc1 (2023-03-24)
+------------------
+1. 修复非root用户启动webservice出错问题。
+2. 完善README。
+
 tros_1.1.6 (2023-03-16)
 ------------------
 1. 修改webservice默认使用的端口为8000，普通用户可直接运行，无需使用sudo权限。
