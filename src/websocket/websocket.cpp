@@ -167,7 +167,7 @@ void Websocket::on_get_timer() {
           .count());
   std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
   //定时器每隔5s检查一次获取图片和AI数据的时间，如果已经超过5s还未收到，会输出error日志。
-  if (time_now - get_image_time >= 5000 && get_image_time > 0) {
+  if (time_now - get_image_time >= 5000) {
     RCLCPP_ERROR(nh_->get_logger(),
                  "Websocket did not receive image data!"
                  " Please check whether the image publisher still exists by "
@@ -176,8 +176,7 @@ void Websocket::on_get_timer() {
   }
 #if defined __aarch64__
   // No AI data is required when only_show_image_ is true
-  if (time_now - get_smart_time >= 5000 && !only_show_image_ &&
-      get_smart_time > 0) {
+  if (time_now - get_smart_time >= 5000 && !only_show_image_) {
     RCLCPP_ERROR(nh_->get_logger(),
                  "Websocket did not receive AI data!"
                  " Please check whether the AI data publisher still exists by "
@@ -186,13 +185,24 @@ void Websocket::on_get_timer() {
   }
 #elif defined __x86_64__
   // No AI data is required when only_show_image_ is true
-  if (time_now - get_smart_time >= 30000 && !only_show_image_ &&
-      get_smart_time > 0) {
-    RCLCPP_ERROR(nh_->get_logger(),
-                 "Websocket did not receive AI data!"
-                 " Please check whether the AI data publisher still exists by "
-                 "'ros2 topic info %s'!",
-                 smart_topic_name_.c_str());
+  if (time_now - get_smart_time >= 30000 && !only_show_image_) {
+    if (get_smart_time == 0) {
+      static int out_time_count = 0;
+      out_time_count++;
+      if (out_time_count > 5) {
+        RCLCPP_ERROR(nh_->get_logger(),
+                    "Websocket did not receive AI data!"
+                    " Please check whether the AI data publisher still exists by "
+                    "'ros2 topic info %s'!",
+                    smart_topic_name_.c_str());
+      }
+    } else {
+      RCLCPP_ERROR(nh_->get_logger(),
+                  "Websocket did not receive AI data!"
+                  " Please check whether the AI data publisher still exists by "
+                  "'ros2 topic info %s'!",
+                  smart_topic_name_.c_str());
+    }
   }
 #endif
   timestamp_lk.unlock();
