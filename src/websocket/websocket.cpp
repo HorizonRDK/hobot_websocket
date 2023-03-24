@@ -174,6 +174,7 @@ void Websocket::on_get_timer() {
                  "'ros2 topic info %s'!",
                  image_topic_name_.c_str());
   }
+#if defined  __aarch64__
   if (time_now - get_smart_time >= 5000 && !only_show_image_) {//No AI data is required when only_show_image_ is true
     RCLCPP_ERROR(nh_->get_logger(),
                  "Websocket did not receive AI data!"
@@ -181,6 +182,15 @@ void Websocket::on_get_timer() {
                  "'ros2 topic info %s'!",
                  smart_topic_name_.c_str());
   }
+#elif defined __x86_64__
+  if (time_now - get_smart_time >= 30000 && !only_show_image_) {//No AI data is required when only_show_image_ is true
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Websocket did not receive AI data!"
+                 " Please check whether the AI data publisher still exists by "
+                 "'ros2 topic info %s'!",
+                 smart_topic_name_.c_str());
+  }
+#endif
   timestamp_lk.unlock();
 }
 
