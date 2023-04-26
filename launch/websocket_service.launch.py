@@ -13,15 +13,10 @@
 # limitations under the License.
 
 import os
-import stat
+# import stat
 import subprocess
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
-from launch_ros.actions import Node
-from launch.substitutions import TextSubstitution
-from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_prefix
 
 """
@@ -33,7 +28,7 @@ from ament_index_python.packages import get_package_prefix
 
 使用：
 使用方法1，直接启动此launch文件：
-ros2 launch websocket hobot_websocket_service.launch.py
+ros2 launch websocket websocket_service.launch.py
 运行结束后，程序退出。
 
 
@@ -43,7 +38,7 @@ ros2 launch websocket hobot_websocket_service.launch.py
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('websocket'),
-                'launch/hobot_websocket_service.launch.py'))
+                'launch/websocket_service.launch.py'))
     )
 
 2、将创建include description作为node添加到LaunchDescription
@@ -52,6 +47,7 @@ ros2 launch websocket hobot_websocket_service.launch.py
         user_defined_node
     ])
 """
+
 
 def generate_launch_description():
     # 启动webserver服务
@@ -72,7 +68,7 @@ def generate_launch_description():
         pwd_path = os.getcwd()
         print("pwd_path is ", pwd_path)
         webserver_path = os.path.join(get_package_prefix('websocket'),
-                                    "lib/websocket/webservice")
+                                      "lib/websocket/webservice")
         print("webserver_path is ", webserver_path)
         os.chdir(webserver_path)
         # os.chmod(nginx, stat.S_IRWXU)
@@ -83,4 +79,4 @@ def generate_launch_description():
         print("webserver has launch")
 
     return LaunchDescription([
-            ])
+    ])
