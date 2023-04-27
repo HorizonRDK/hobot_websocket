@@ -121,7 +121,7 @@ ros2 run hobot_usb_cam hobot_usb_cam --ros-args -p pixel_format:=mjpeg -p image_
 第一次运行要启动webserver服务，运行方法为:
 
 ```shell
-ros2 launch websocket hobot_websocket_service.launch.py
+ros2 launch websocket websocket_service.launch.py
 ```
 
 启动websocket节点
@@ -166,7 +166,7 @@ ros2 run mono2d_body_detection mono2d_body_detection --ros-args --log-level erro
 第一次运行要启动webserver服务，运行方法为:
 
 ```shell
-ros2 launch websocket hobot_websocket_service.launch.py
+ros2 launch websocket websocket_service.launch.py
 ```
 
 启动websocket节点
@@ -181,7 +181,7 @@ ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_typ
 source ./install/setup.bash
 
 # 已在脚本中启动webserver服务，并切换到mono2d_body_detection目录，不需再拷贝config文件夹到当前目录
-ros2 launch websocket hobot_websocket.launch.py
+ros2 launch websocket websocket.launch.py
 ```
 
 ### **x3 Linux**
