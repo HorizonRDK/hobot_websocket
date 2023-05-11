@@ -6,14 +6,19 @@
   <description>TogetheROS websocket</description>
   <maintainer email="zhuo.wang@horizon.ai">zhuo</maintainer>
   <license>Apache License 2.0</license>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>ai_msgs</depend>
   <depend>hbm_img_msgs</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+
   <exec_depend>ros2launch</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
