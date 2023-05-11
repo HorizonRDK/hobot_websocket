@@ -1,5 +1,12 @@
 # Changelog for package websocket
 
+tros_2.0.0 (2023-05-11)
+------------------
+1. 更新package.xml，支持应用独立打包
+2. 更新应用启动launch脚本
+3. 更新Web地平线logo
+4. 更新protobuf、nginx、openssl版本
+
 tros_1.1.6rc1 (2023-03-24)
 ------------------
 1. 修复非root用户启动webservice出错问题。
