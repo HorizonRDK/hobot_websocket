@@ -1,12 +1,12 @@
 # WEB展示端
 
-# 功能介绍
+## 功能介绍
 
 为了方便预览图像和算法效果，TogetherROS集成了web展示功能，通过网络将图像和算法结果传输到浏览器端，然后进行渲染显示。
 
-# 编译
+## 编译
 
-## 依赖库
+### 依赖库
 
 ros package：
 
@@ -17,20 +17,20 @@ hbm_img_msgs为自定义消息格式，用于发布shared memory类型图像数�
 
 ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在hobot_msgs中。
 
-## 开发环境
+### 开发环境
 
 - 编程语言: C/C++
 - 开发平台: X3/X86
 - 系统版本：Ubuntu 20.04
 - 编译工具链:Linux GCC 9.3.0/Linaro GCC 9.3.0
 
-## 编译
+### 编译
 
  支持在X3/X86 Ubuntu系统上编译以及在x86 Ubuntu上使用docker交叉编译x3可执行程序。
 
-### X3/X86 Ubuntu平台编译
+#### X3/X86 Ubuntu平台编译
 
-1. 编译环境确认 
+1. 编译环境确认
 
    - Ubuntu系统为Ubuntu 20.04。
    - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
@@ -40,7 +40,7 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
 
 编译命令：`colcon build --merge-install --packages-select websocket`
 
-### x86 Ubuntu Docker交叉编译
+#### x86 Ubuntu Docker交叉编译
 
 1. 编译环境确认
 
@@ -50,7 +50,7 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
 
    - 编译命令：
 
-   ```
+   ```shell
    export TARGET_ARCH=aarch64
    export TARGET_TRIPLE=aarch64-linux-gnu
    export CROSS_COMPILE=/usr/bin/$TARGET_TRIPLE-
@@ -63,15 +63,15 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
       -DCMAKE_TOOLCHAIN_FILE=`pwd`/robot_dev_config/aarch64_toolchainfile.cmake
    ```
 
-## 注意事项
+### 注意事项
 
 TogetherROS安装包已包含websocket包，用户可直接使用，不需要单独编译。若用户基于源码开发新功能，则需要单独编译验证。
 
-# 使用介绍
+## 使用介绍
 
 websocket支持在X3/X86 Ubuntu 20.04系统和x3 yocto linux系统运行。
 
-## 依赖
+### 依赖
 
 websocket接收图像消息和智能结果消息，根据时间戳进行匹配，然后输出给web端渲染显示，也可单独显示图像。
 
@@ -87,7 +87,7 @@ websocket接收图像消息和智能结果消息，根据时间戳进行匹配�
 - hobot_codec：将mipi_cam发布的nv12图像编码为websocket需要的jpeg格式图像
 - mono2d_body_detection：接收nv12格式数据，进行算法推理，发布人体、人头、人脸、人手框感知消息
 
-## 参数
+### 参数
 
 | 参数名          | 解释                | 类型        | 支持的配置                                                   | 是否必须 | 默认值                       |
 | --------------- | ------------------- | ----------- | ------------------------------------------------------------ | -------- | ---------------------------- |
@@ -97,12 +97,11 @@ websocket接收图像消息和智能结果消息，根据时间戳进行匹配�
 | smart_topic     | 订阅的智能结果topic | std::string | 根据实际算法推理节点配置                                     | 否       | /hobot_mono2d_body_detection |
 | output_fps     | 按照指定帧率输出图像 | int | [1, 30]，在此范围外的配置表示不做帧率控制                                     | 否       | 0（不做帧率控制） |
 
-## 运行
+### 运行
 
 编译成功后，如果是Docker交叉编译，需要将生成的install路径拷贝到地平线X3开发板上，其他方式则不需要。运行方式如下：
 
-
-### **x86 Ubuntu系统**
+#### **x86 Ubuntu系统**
 
 source setup.bash
 
@@ -130,9 +129,9 @@ ros2 launch websocket websocket_service.launch.py
 ros2 run websocket websocket --ros-args -p image_topic:=/image -p image_type:=mjpeg -p only_show_image:=true
 ~~~
 
-### **x3 Ubuntu**
+#### **x3 Ubuntu**
 
-#### 方式1，ros2 run运行
+##### 方式1，ros2 run运行
 
 source setup.bash
 
@@ -175,16 +174,28 @@ ros2 launch websocket websocket_service.launch.py
 ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
 ~~~
 
-#### 方式2，launch文件启动
+##### 方式2，launch文件启动
 
 ```shell
 source ./install/setup.bash
 
-# 已在脚本中启动webserver服务，并切换到mono2d_body_detection目录，不需再拷贝config文件夹到当前目录
-ros2 launch websocket websocket.launch.py
+ros2 launch mipi_cam mipi_cam.launch.py mipi_video_device:=F37
 ```
 
-### **x3 Linux**
+```shell
+source ./install/setup.bash
+
+ros2 launch hobot_codec hobot_codec_encode.launch.py
+```
+
+```shell
+source ./install/setup.bash
+
+# 已在脚本中启动webserver服务
+ros2 launch websocket websocket.launch.py websocket_image_topic:=/image_jpeg websocket_only_show_image:=true
+```
+
+#### **x3 Linux**
 
 第一次运行要启动webserver服务，运行方法为:
 
@@ -214,15 +225,15 @@ cp -r install/lib/mono2d_body_detection/config/ .
 ./install/lib/websocket/websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection &
 ```
 
-## 注意事项
+### 注意事项
 
 第一次运行web展示需要启动webserver服务。
 
-# 结果分析
+## 结果分析
 
-## 结果LOG展示
+### 结果LOG展示
 
-```
+```text
 root@ubuntu:~# ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
 [INFO] [1652694326.097724577] [websocket]: 
 Parameter:
@@ -233,13 +244,13 @@ Parameter:
 [INFO] [1652694326.098510510] [websocket]: Websocket using image jpeg
 ```
 
-## web效果展示
+### web效果展示
 
-使用谷歌浏览器或Edge，输入http://IP:8000，即可查看图像和算法渲染效果（IP为设备IP地址）。
+使用谷歌浏览器或Edge，输入<http://IP:8000>，即可查看图像和算法渲染效果（IP为设备IP地址）。
 
-# 常见问题
+## 常见问题
 
-## 启动webserver失败
+### 启动webserver失败
 
 webserver服务需要使用8000端口，如果端口被占用，则会启动失败。
 
