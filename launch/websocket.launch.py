@@ -84,6 +84,6 @@ def generate_launch_description():
                 {"output_fps": LaunchConfiguration('websocket_output_fps')},
                 {"smart_topic": LaunchConfiguration('websocket_smart_topic')}
             ],
-            arguments=['--ros-args', '--log-level', 'info']
+            arguments=['--ros-args', '--log-level', 'error']
         )
     ])
