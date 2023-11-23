@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <fstream>
 
 #include "ai_msgs/msg/perception_targets.hpp"
 #include "hbm_img_msgs/msg/hbm_msg1080_p.hpp"
@@ -53,15 +54,12 @@ class Websocket {
   ~Websocket();
 
   void OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg);
-  void OnGetJpegImageHbmem(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg);
   void OnGetSmartMessage(const ai_msgs::msg::PerceptionTargets::SharedPtr msg);
 
  private:
   rclcpp::Node::SharedPtr nh_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
   rclcpp::Subscription<ai_msgs::msg::PerceptionTargets>::SharedPtr ai_msg_sub_;
-  rclcpp::SubscriptionHbmem<hbm_img_msgs::msg::HbmMsg1080P>::SharedPtr
-      image_hbmem_sub_;
 
   std::shared_ptr<UwsServer> uws_server_;
   std::shared_ptr<std::thread> worker_;

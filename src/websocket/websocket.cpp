@@ -104,12 +104,6 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
   } else if (image_type_ == "mjpeg_shared_mem") {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg shared memory");
     using_hbmem_image_ = true;
-    image_hbmem_sub_ =
-        nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
-            image_topic_name_,
-            10,
-            std::bind(
-                &Websocket::OnGetJpegImageHbmem, this, std::placeholders::_1));
   } else {
     RCLCPP_ERROR(nh_->get_logger(), "Websocket unsupported image type");
     throw std::runtime_error("Websocket unsupported image type");
@@ -250,78 +244,6 @@ void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
                 "image message");
   }
   map_smart_condition_.notify_one();
-#endif
-}
-
-void Websocket::OnGetJpegImageHbmem(
-    const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg) {
-  if (!has_get_image_message_) {
-    has_get_image_message_ = true;
-  }
-  //获取接收Image时间
-  std::unique_lock<std::mutex> timestamp_lk(timestamp_mtx);
-  get_image_time = static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::steady_clock::now().time_since_epoch())
-          .count());
-  timestamp_lk.unlock();
-  {
-    std::lock_guard<std::mutex> video_lock(video_mutex_);
-    if (video_stop_flag_) {
-      RCLCPP_WARN(nh_->get_logger(),
-                  "Aleardy stop, Websocket Feedvideo return");
-      return;
-    }
-  }
-
-#if defined  __aarch64__
-  if (only_show_image_ || has_get_smart_message_) {
-    auto image = std::make_shared<sensor_msgs::msg::Image>();
-    image->header.stamp = msg->time_stamp;
-    image->header.frame_id = "default_cam";
-
-    image->width = msg->width;
-    image->height = msg->height;
-    image->step = msg->width;
-    image->encoding = "jpeg";
-    image->data.resize(msg->data_size);
-    memcpy(image->data.data(), msg->data.data(), msg->data_size);
-
-    {
-      std::unique_lock<std::mutex> lock(map_smart_mutex_);
-      x3_frames_.push(image);
-      if (x3_frames_.size() > 100) {
-        x3_frames_.pop();
-        RCLCPP_WARN(nh_->get_logger(),
-                    "web socket has cache image num > 100, drop the oldest "
-                    "image message");
-      }
-      map_smart_condition_.notify_one();
-    }
-  }
-#elif defined __x86_64__
-  auto image = std::make_shared<sensor_msgs::msg::Image>();
-  image->header.stamp = msg->time_stamp;
-  image->header.frame_id = "default_cam";
-
-  image->width = msg->width;
-  image->height = msg->height;
-  image->step = msg->width;
-  image->encoding = "jpeg";
-  image->data.resize(msg->data_size);
-  memcpy(image->data.data(), msg->data.data(), msg->data_size);
-
-  {
-    std::unique_lock<std::mutex> lock(map_smart_mutex_);
-    x3_frames_.push(image);
-    if (x3_frames_.size() > 100) {
-      x3_frames_.pop();
-      RCLCPP_WARN(nh_->get_logger(),
-                  "web socket has cache image num > 100, drop the oldest "
-                  "image message");
-    }
-    map_smart_condition_.notify_one();
-  }
 #endif
 }
 
