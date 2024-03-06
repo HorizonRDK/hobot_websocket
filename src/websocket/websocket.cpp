@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "opencv2/core/mat.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/imgproc.hpp"
+
 #include "websocket/websocket.h"
 
 namespace websocket {
@@ -57,7 +61,7 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
   image_topic_descriptor.description = "image topic name";
   rcl_interfaces::msg::ParameterDescriptor image_type_descriptor;
   image_type_descriptor.description =
-      "image type, supported options: mjpeg, mjpeg_shared_mem";
+      "image type, supported options: mjpeg, jpeg_shared_mem";
   rcl_interfaces::msg::ParameterDescriptor smart_topic_descriptor;
   smart_topic_descriptor.description = "smart topic name";
   nh_->declare_parameter<std::string>(
@@ -94,15 +98,18 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
                            << "\n output_fps: " << output_fps_);
   }
 
+  sp_img_info_ = std::make_shared<ImgInfo>();
+  sp_img_info_->is_updated = false;
+
   if (image_type_ == "mjpeg") {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg");
     using_hbmem_image_ = false;
-    image_sub_ = nh_->create_subscription<sensor_msgs::msg::Image>(
+    image_sub_ = nh_->create_subscription<sensor_msgs::msg::CompressedImage>(
         image_topic_name_,
         10,
         std::bind(&Websocket::OnGetJpegImage, this, std::placeholders::_1));
-  } else if (image_type_ == "mjpeg_shared_mem") {
-    RCLCPP_INFO(nh_->get_logger(), "Websocket using image mjpeg shared memory");
+  } else if (image_type_ == "jpeg_shared_mem") {
+    RCLCPP_INFO(nh_->get_logger(), "Websocket using image jpeg shared memory");
     using_hbmem_image_ = true;
     image_hbmem_sub_ =
         nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
@@ -111,7 +118,7 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
             std::bind(
                 &Websocket::OnGetJpegImageHbmem, this, std::placeholders::_1));
   } else {
-    RCLCPP_ERROR(nh_->get_logger(), "Websocket unsupported image type");
+    RCLCPP_ERROR(nh_->get_logger(), "Websocket unsupported image type [%s]", image_type_.c_str());
     throw std::runtime_error("Websocket unsupported image type");
   }
 
@@ -208,7 +215,7 @@ void Websocket::on_get_timer() {
   timestamp_lk.unlock();
 }
 
-void Websocket::OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg) {
+void Websocket::OnGetJpegImage(const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
   if (!has_get_image_message_) {
     has_get_image_message_ = true;
   }
@@ -273,17 +280,12 @@ void Websocket::OnGetJpegImageHbmem(
       return;
     }
   }
-
 #if defined  __aarch64__
   if (only_show_image_ || has_get_smart_message_) {
-    auto image = std::make_shared<sensor_msgs::msg::Image>();
+    auto image = std::make_shared<sensor_msgs::msg::CompressedImage>();
     image->header.stamp = msg->time_stamp;
     image->header.frame_id = "default_cam";
-
-    image->width = msg->width;
-    image->height = msg->height;
-    image->step = msg->width;
-    image->encoding = "jpeg";
+    image->format = "jpeg";
     image->data.resize(msg->data_size);
     memcpy(image->data.data(), msg->data.data(), msg->data_size);
 
@@ -300,14 +302,10 @@ void Websocket::OnGetJpegImageHbmem(
     }
   }
 #elif defined __x86_64__
-  auto image = std::make_shared<sensor_msgs::msg::Image>();
+  auto image = std::make_shared<sensor_msgs::msg::CompressedImage>();
   image->header.stamp = msg->time_stamp;
   image->header.frame_id = "default_cam";
-
-  image->width = msg->width;
-  image->height = msg->height;
-  image->step = msg->width;
-  image->encoding = "jpeg";
+  image->format = "jpeg";
   image->data.resize(msg->data_size);
   memcpy(image->data.data(), msg->data.data(), msg->data_size);
 
@@ -498,15 +496,34 @@ int Websocket::FrameAddSmart(
 }
 
 int Websocket::FrameAddImage(x3::FrameMessage &msg_send,
-                             sensor_msgs::msg::Image::SharedPtr frame_msg) {
+                             sensor_msgs::msg::CompressedImage::SharedPtr frame_msg) {
+  if (!sp_img_info_) {
+    RCLCPP_ERROR(nh_->get_logger(),
+                "Invalid img info instance!");
+    return -1;
+  }
+
+  if (!sp_img_info_->is_updated ||
+    std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::high_resolution_clock::now() - sp_img_info_->tp_last_update).count() >=
+      sp_img_info_->update_period_ms) {
+    sp_img_info_->is_updated = true;
+    sp_img_info_->tp_last_update = std::chrono::high_resolution_clock::now();
+    cv::Mat bgr_mat;
+    bgr_mat = cv::imdecode(cv::Mat(frame_msg->data), cv::IMREAD_UNCHANGED);
+    sp_img_info_->img_w = bgr_mat.cols;
+    sp_img_info_->img_h = bgr_mat.rows;
+  }
+
   msg_send.set_timestamp_(static_cast<uint64_t>(frame_msg->header.stamp.sec) *
                               1000000000 +
                           frame_msg->header.stamp.nanosec);
   auto image = msg_send.mutable_img_();
   image->set_buf_((const char *)frame_msg->data.data(), frame_msg->data.size());
   image->set_type_("jpeg");
-  image->set_width_(frame_msg->width);
-  image->set_height_(frame_msg->height);
+  image->set_width_(sp_img_info_->img_w);
+  image->set_height_(sp_img_info_->img_h);
+
   return 0;
 }
 
@@ -546,7 +563,7 @@ int Websocket::FrameAddSystemInfo(x3::FrameMessage &msg_send) {
   return 0;
 }
 
-int Websocket::SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg) {
+int Websocket::SendImageMessage(sensor_msgs::msg::CompressedImage::SharedPtr frame_msg) {
   // fps control
   if (output_fps_ > 0 && output_fps_ <= 30) {
     send_frame_count_++;
@@ -567,7 +584,7 @@ int Websocket::SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg) {
 
 int Websocket::SendImageSmartMessage(
     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
-    sensor_msgs::msg::Image::SharedPtr frame_msg) {
+    sensor_msgs::msg::CompressedImage::SharedPtr frame_msg) {
   // fps control
   if (output_fps_ > 0 && output_fps_ <= 30) {
     send_frame_count_++;

@@ -46,6 +46,8 @@ include_directories(
   include/utils
 )
 
+set(OPENCV_LIB opencv_world)
+
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
   include_directories(
     third_party/aarch64/protobuf/include
@@ -102,6 +104,7 @@ target_link_libraries(websocket
   crypto 
   z 
   libprotobuf.a
+  ${OPENCV_LIB}
 )
 
 # Install target

@@ -25,14 +25,16 @@
 #include "proto/x3.pb.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include "sensor_msgs/msg/compressed_image.hpp"
+
 #include "server/uws_server.h"
 #include "threads/threadpool.h"
 
 namespace websocket {
 
 struct compare_frame {
-  bool operator()(const sensor_msgs::msg::Image::SharedPtr f1,
-                  const sensor_msgs::msg::Image::SharedPtr f2) {
+  bool operator()(const sensor_msgs::msg::CompressedImage::SharedPtr f1,
+                  const sensor_msgs::msg::CompressedImage::SharedPtr f2) {
     return ((f1->header.stamp.sec > f2->header.stamp.sec) ||
             ((f1->header.stamp.sec == f2->header.stamp.sec) &&
              (f1->header.stamp.nanosec > f2->header.stamp.nanosec)));
@@ -52,13 +54,13 @@ class Websocket {
   Websocket(rclcpp::Node::SharedPtr &nh);
   ~Websocket();
 
-  void OnGetJpegImage(const sensor_msgs::msg::Image::SharedPtr msg);
+  void OnGetJpegImage(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
   void OnGetJpegImageHbmem(const hbm_img_msgs::msg::HbmMsg1080P::SharedPtr msg);
   void OnGetSmartMessage(const ai_msgs::msg::PerceptionTargets::SharedPtr msg);
 
  private:
   rclcpp::Node::SharedPtr nh_;
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   rclcpp::Subscription<ai_msgs::msg::PerceptionTargets>::SharedPtr ai_msg_sub_;
   rclcpp::SubscriptionHbmem<hbm_img_msgs::msg::HbmMsg1080P>::SharedPtr
       image_hbmem_sub_;
@@ -69,8 +71,8 @@ class Websocket {
   bool map_stop_ = false;
   std::condition_variable map_smart_condition_;
 
-  std::priority_queue<sensor_msgs::msg::Image::SharedPtr,
-                      std::vector<sensor_msgs::msg::Image::SharedPtr>,
+  std::priority_queue<sensor_msgs::msg::CompressedImage::SharedPtr,
+                      std::vector<sensor_msgs::msg::CompressedImage::SharedPtr>,
                       compare_frame>
       x3_frames_;
   std::priority_queue<ai_msgs::msg::PerceptionTargets::SharedPtr,
@@ -105,14 +107,14 @@ class Websocket {
   void on_get_timer();
 
   int FrameAddImage(x3::FrameMessage &msg_send,
-                    sensor_msgs::msg::Image::SharedPtr frame_msg);
+                    sensor_msgs::msg::CompressedImage::SharedPtr frame_msg);
   int FrameAddSmart(x3::FrameMessage &proto_frame_message,
                     ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg);
   int FrameAddSystemInfo(x3::FrameMessage &msg_send);
-  int SendImageMessage(sensor_msgs::msg::Image::SharedPtr frame_msg);
+  int SendImageMessage(sensor_msgs::msg::CompressedImage::SharedPtr frame_msg);
   int SendImageSmartMessage(
       ai_msgs::msg::PerceptionTargets::SharedPtr smart_msg,
-      sensor_msgs::msg::Image::SharedPtr frame_msg);
+      sensor_msgs::msg::CompressedImage::SharedPtr frame_msg);
 
   void MessageProcess(void);
 
@@ -120,6 +122,17 @@ class Websocket {
   // 默认不做帧率控制
   int output_fps_ = 0;
   int send_frame_count_ = 0;
+
+  struct ImgInfo
+  {
+    std::atomic_bool is_updated;
+    std::chrono::high_resolution_clock::time_point tp_last_update =
+      std::chrono::high_resolution_clock::now();
+    int update_period_ms = 1000;
+    int img_w = 0;
+    int img_h = 0;
+  };
+  std::shared_ptr<ImgInfo> sp_img_info_ = nullptr;
 };
 
 }  // namespace websocket

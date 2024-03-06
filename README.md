@@ -75,7 +75,7 @@ websocket支持在X3/X86 Ubuntu 20.04系统和x3 yocto linux系统运行。
 
 websocket接收图像消息和智能结果消息，根据时间戳进行匹配，然后输出给web端渲染显示，也可单独显示图像。
 
-图像消息支持`sensor_msgs::msg::Image`以及`shared_mem`的`hbm_img_msgs::msg::HbmMsg1080P`类型消息，必须为mjpeg编码格式图像数据。
+图像消息支持`sensor_msgs::msg::CompressedImage`以及`shared_mem`的`hbm_img_msgs::msg::HbmMsg1080P`类型消息，必须为mjpeg编码格式图像数据。
 
 智能结果消息支持`ai_msgs::msg::PerceptionTargets`类型消息，其中`header.stamp`必须和该智能结果对应的image消息相同，websocket会使用该字段进行消息匹配，还有智能结果对应的宽高必须要和接收到的图像分辨率一致。
 

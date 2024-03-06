@@ -1,5 +1,9 @@
 # Changelog for package websocket
 
+tros_2.0.1 (2024-3-4)
+------------------
+1. 订阅的`jpeg`压缩格式图片使用的数据类型由`sensor_msgs::msg::Image`变更为`sensor_msgs::msg::CompressedImage`。
+
 tros_2.0.0rc1 (2023-05-23)
 ------------------
 1. 更新openssl版本
