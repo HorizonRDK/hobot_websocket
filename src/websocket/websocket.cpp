@@ -112,7 +112,7 @@ Websocket::Websocket(rclcpp::Node::SharedPtr &nh) : nh_(nh) {
     RCLCPP_INFO(nh_->get_logger(), "Websocket using image jpeg shared memory");
     using_hbmem_image_ = true;
     image_hbmem_sub_ =
-        nh_->create_subscription_hbmem<hbm_img_msgs::msg::HbmMsg1080P>(
+        nh_->create_subscription<hbm_img_msgs::msg::HbmMsg1080P>(
             image_topic_name_,
             10,
             std::bind(
