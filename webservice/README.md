@@ -1,9 +1,11 @@
+English| [简体中文](./README_cn.md)
+
 # webserver
 
-包含nginx服务以及web客户端配套的web页面。
+Containing the nginx service and web client matched web pages.
 
-# 使用
-1、拷贝此文件夹到设备上
-2、启动服务：./sbin/nginx -p .
-3、访问：
-    web展示端：http://IP
+# How to Use
+1. Copy this folder to the device
+2. Start the service: ./sbin/nginx -p .
+3. Access:
+   Web display end: http://IP

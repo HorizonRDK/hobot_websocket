@@ -1,54 +1,52 @@
-# WEB展示端
+English| [简体中文](./README_cn.md)
 
-## 功能介绍
+# WEB Display End
 
-为了方便预览图像和算法效果，TogetherROS集成了web展示功能，通过网络将图像和算法结果传输到浏览器端，然后进行渲染显示。
+## Function Introduction
 
-## 编译
+To facilitate the preview of images and algorithm effects, TogetherROS integrates web display function, transferring images and algorithm results to the browser end through the network for rendering and displaying.
 
-### 依赖库
+## Compilation
 
-ros package：
+### Dependencies
+
+ROS packages:
 
 - hbm_img_msgs
 - ai_msgs
 
-hbm_img_msgs为自定义消息格式，用于发布shared memory类型图像数据，定义在hobot_msgs中。
+hbm_img_msgs is a custom message format used to publish shared memory type image data, defined in hobot_msgs.
 
-ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在hobot_msgs中。
+ai_msgs is a custom message format used to publish algorithm inference results, defined in hobot_msgs.
 
-### 开发环境
+### Development Environment
 
-- 编程语言: C/C++
-- 开发平台: X3/X86
-- 系统版本：Ubuntu 20.04
-- 编译工具链:Linux GCC 9.3.0/Linaro GCC 9.3.0
+- Programming Language: C/C++
+- Development Platform: X3/X86
+- System Version: Ubuntu 20.04
+- Compilation Toolchain: Linux GCC 9.3.0/Linaro GCC 9.3.0
 
-### 编译
+### Compilation
 
- 支持在X3/X86 Ubuntu系统上编译以及在x86 Ubuntu上使用docker交叉编译x3可执行程序。
+Support compilation on X3/X86 Ubuntu system and cross-compilation of x3 executable on x86 Ubuntu using Docker.
 
-#### X3/X86 Ubuntu平台编译
+#### Compilation on X3/X86 Ubuntu Platform
 
-1. 编译环境确认
+1. Compilation Environment Confirmation
 
-   - Ubuntu系统为Ubuntu 20.04。
-   - 当前编译终端已设置TogetherROS环境变量：`source PATH/setup.bash`。其中PATH为TogetherROS的安装路径。
-   - 已安装ROS2编译工具colcon，安装命令：`pip install -U colcon-common-extensions`
+   - Ubuntu system is Ubuntu 20.04.
+   - The current compilation terminal has set the TogetherROS environment variable: `source PATH/setup.bash`. Here, PATH is the installation path of TogetherROS.
+   - ROS2 compilation tool colcon is installed, installation command: `pip install -U colcon-common-extensions`
 
-2. 编译
+2. Compilation
 
-编译命令：`colcon build --merge-install --packages-select websocket`
+Compilation command: `colcon build --merge-install --packages-select websocket`
 
-#### x86 Ubuntu Docker交叉编译
+#### Cross-compilation on x86 Ubuntu Docker
 
-1. 编译环境确认
+1. Compilation Environment Confirmation
 
-   - 在docker中编译，并且docker中已经安装好TogetherROS。docker安装、交叉编译说明、TogetherROS编译和部署说明详见机器人开发平台robot_dev_config repo中的README.md。
-
-2. 编译
-
-   - 编译命令：
+   - Compilation in Docker with TogetherROS already installed. For Docker installation, cross-compilation instructions, and TogetherROS compilation and deployment details, refer to the README.md in the robot development platform robot_dev_config repository.- Compilation command:
 
    ```shell
    export TARGET_ARCH=aarch64
@@ -63,45 +61,43 @@ ai_msgs为自定义消息格式，用于发布算法模推理结果，定义在h
       -DCMAKE_TOOLCHAIN_FILE=`pwd`/robot_dev_config/aarch64_toolchainfile.cmake
    ```
 
-### 注意事项
+### Notes
 
-TogetherROS安装包已包含websocket包，用户可直接使用，不需要单独编译。若用户基于源码开发新功能，则需要单独编译验证。
+The TogetherROS installation package already includes the websocket package, which users can directly use without the need for separate compilation. If users develop new features based on the source code, separate compilation and validation are required.
 
-## 使用介绍
+## User Guide
 
-websocket支持在X3/X86 Ubuntu 20.04系统和x3 yocto linux系统运行。
+websocket supports running on X3/X86 Ubuntu 20.04 systems and x3 yocto Linux systems.
 
-### 依赖
+### Dependencies
 
-websocket接收图像消息和智能结果消息，根据时间戳进行匹配，然后输出给web端渲染显示，也可单独显示图像。
+websocket receives image messages and smart result messages, matches them based on timestamps, and then outputs them for rendering on the web client, or displays images individually.
 
-图像消息支持`sensor_msgs::msg::CompressedImage`以及`shared_mem`的`hbm_img_msgs::msg::HbmMsg1080P`类型消息，必须为mjpeg编码格式图像数据。
+Image messages support `sensor_msgs::msg::CompressedImage` and `shared_mem` of type `hbm_img_msgs::msg::HbmMsg1080P`, which must be MJPEG encoded image data.
 
-智能结果消息支持`ai_msgs::msg::PerceptionTargets`类型消息，其中`header.stamp`必须和该智能结果对应的image消息相同，websocket会使用该字段进行消息匹配，还有智能结果对应的宽高必须要和接收到的图像分辨率一致。
+Smart result messages support messages of type `ai_msgs::msg::PerceptionTargets`, where `header.stamp` must match the timestamp of the corresponding image message. Websocket will use this field for message matching, and the width and height of the smart result must be consistent with the resolution of the received image.
 
-具体依赖的package有：
+Specific package dependencies include:
 
-- mipi_cam：启动mipi cam，发布nv12类型图像消息
-- hobot_image_publisher：输入图片或视频，发布nv12类型图像消息
-- hobot_usb_cam：从USB摄像头获取图像，发布mjpeg编码格式图像消息
-- hobot_codec：将mipi_cam发布的nv12图像编码为websocket需要的jpeg格式图像
-- mono2d_body_detection：接收nv12格式数据，进行算法推理，发布人体、人头、人脸、人手框感知消息
+- mipi_cam: Starts the mipi cam and publishes nv12 type image messages
+- hobot_image_publisher: Inputs images or videos and publishes nv12 type image messages
+- hobot_usb_cam: Gets images from a USB camera and publishes images in MJPEG format
+- hobot_codec: Encodes nv12 images published by mipi_cam into JPEG format required by websocket
+- mono2d_body_detection: Receives nv12 format data, performs algorithm inference, and publishes perception messages for human body, head, face, and hand bounding boxes
 
-### 参数
+### Parameters
 
-| 参数名          | 解释                | 类型        | 支持的配置                                                   | 是否必须 | 默认值                       |
+| Parameter Name  | Description          | Type        | Supported Configurations                                      | Required | Default Value                 |
 | --------------- | ------------------- | ----------- | ------------------------------------------------------------ | -------- | ---------------------------- |
-| image_topic     | 订阅的图像topic     | std::string | 根据实际mipi_cam节点配置                                     | 否       | "/image_jpeg"                |
-| image_type      | image消息类型       | std::string | "mjpeg"/"mjpeg_shared_mem"<br />"mjpeg"：ros类型jpeg图像<br />"mjpeg_shared_mem"：shared_mem类型jpeg图像 | 否       | "mjpeg"                      |
-| only_show_image | 是否只显示图像      | bool        | true/false                                                   | 否       | false                        |
-| smart_topic     | 订阅的智能结果topic | std::string | 根据实际算法推理节点配置                                     | 否       | /hobot_mono2d_body_detection |
-| output_fps     | 按照指定帧率输出图像 | int | [1, 30]，在此范围外的配置表示不做帧率控制                                     | 否       | 0（不做帧率控制） |
+| image_topic     | Subscribed image topic     | std::string | Depending on the actual configuration of the mipi_cam node  | No       | "/image_jpeg"                |
+| image_type      | Image message type       | std::string | "mjpeg"/"mjpeg_shared_mem"<br />"mjpeg": ros type jpeg image<br />"mjpeg_shared_mem": shared_mem type jpeg image | No       | "mjpeg"                      |
+| only_show_image | Display image only      | bool        | true/false                                                   | No       | false                        |
+| smart_topic     | Subscribed smart result topic | std::string | Depending on the actual configuration of the algorithm inference node | No       | /hobot_mono2d_body_detection |
+| output_fps     | Output images according to specified frame rate | int | [1, 30], configurations beyond this range mean no frame rate control | No       | 0 (no frame rate control) |
 
-### 运行
+### RunningAfter successful compilation, if it is Docker cross compilation, the generated install path needs to be copied to Horizon X3 development board, other methods do not require this. The running steps are as follows:
 
-编译成功后，如果是Docker交叉编译，需要将生成的install路径拷贝到地平线X3开发板上，其他方式则不需要。运行方式如下：
-
-#### **x86 Ubuntu系统**
+#### **x86 Ubuntu system**
 
 source setup.bash
 
@@ -109,21 +105,21 @@ source setup.bash
 source ./install/setup.bash
 ~~~
 
-运行hobot_usb_cam发布mjpeg图片
+Run hobot_usb_cam to publish MJPEG images
 
 ~~~shell
 ros2 run hobot_usb_cam hobot_usb_cam --ros-args -p pixel_format:=mjpeg -p image_width:=1280 -p image_height:=720 -p zero_copy:=false -p video_device:="/dev/video0" --log-level error &
 ~~~
 
-启动websocket服务
+Start the websocket service
 
-第一次运行要启动webserver服务，运行方法为:
+For the first time, you need to start the webserver service by running:
 
 ```shell
 ros2 launch websocket websocket_service.launch.py
 ```
 
-启动websocket节点
+Start the websocket node
 
 ~~~shell
 ros2 run websocket websocket --ros-args -p image_topic:=/image -p image_type:=mjpeg -p only_show_image:=true
@@ -131,7 +127,7 @@ ros2 run websocket websocket --ros-args -p image_topic:=/image -p image_type:=mj
 
 #### **x3 Ubuntu**
 
-##### 方式1，ros2 run运行
+##### Method 1, running with ros2 run
 
 source setup.bash
 
@@ -139,42 +135,42 @@ source setup.bash
 source ./install/setup.bash
 ~~~
 
-运行mipi cam
+Run mipi cam
 
 ~~~shell
 ros2 run mipi_cam mipi_cam --ros-args -p out_format:=nv12 -p image_width:=960 -p image_height:=544 -p io_method:=shared_mem --log-level error &
 ~~~
 
-运行hobot_codec进行jpeg编码
+Run hobot_codec for JPEG encoding
 
-~~~shell
+~~~shell```shell
 ros2 run hobot_codec hobot_codec_republish --ros-args -p channel:=1 -p in_mode:=shared_mem -p in_format:=nv12 -p out_mode:=ros -p out_format:=jpeg -p sub_topic:=/hbmem_img -p pub_topic:=/image_jpeg --ros-args --log-level error &
-~~~
+```
 
-启动单目rgb人体、人头、人脸、人手框和人体关键点检测
+Start single-camera RGB human body, head, face, hand bounding box detection
 
-~~~shell
-# 如果是板端编译（无--merge-install编译选项），拷贝命令为cp -r install/PKG_NAME/lib/PKG_NAME/config/ .，其中PKG_NAME为具体的package名。
+```shell
+# If compiling on the board end (without the --merge-install compilation option), the copy command is cp -r install/PKG_NAME/lib/PKG_NAME/config/ ., where PKG_NAME is the specific package name.
 cp -r install/lib/mono2d_body_detection/config/ .
 
 ros2 run mono2d_body_detection mono2d_body_detection --ros-args --log-level error &
-~~~
+```
 
-启动websocket服务
+Start websocket service
 
-第一次运行要启动webserver服务，运行方法为:
+To start the webserver service for the first time, run the following command:
 
 ```shell
 ros2 launch websocket websocket_service.launch.py
 ```
 
-启动websocket节点
+Start websocket node
 
-~~~shell
+```shell
 ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
-~~~
+```
 
-##### 方式2，launch文件启动
+##### Method 2, launch file start
 
 ```shell
 source ./install/setup.bash
@@ -191,47 +187,45 @@ ros2 launch hobot_codec hobot_codec_encode.launch.py
 ```shell
 source ./install/setup.bash
 
-# 已在脚本中启动webserver服务
+# Webserver service already started in the script
 ros2 launch websocket websocket.launch.py websocket_image_topic:=/image_jpeg websocket_only_show_image:=true
 ```
 
 #### **x3 Linux**
 
-第一次运行要启动webserver服务，运行方法为:
-
-`cd` 到 `install/websocket/lib/websocket/webservice`目录下，然后启动nginx
+To start the webserver service for the first time, run the following command:`cd` to the directory `install/websocket/lib/websocket/webservice`, and then start nginx
 
 ```shell
   ./sbin/nginx -p .
 ```
 
-启动各个节点：
+Start each node:
 
 ```shell
 export ROS_LOG_DIR=/userdata/
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:./install/lib/
 
-# config中为示例使用的模型，根据实际安装路径进行拷贝
+# Copy the example model in the config folder based on the actual installation path
 cp -r install/lib/mono2d_body_detection/config/ .
 
-# 启动图片发布pkg
+# Start image publishing package
 ./install/lib/mipi_cam/mipi_cam --ros-args -p out_format:=nv12 -p image_width:=960 -p image_height:=544 -p io_method:=shared_mem --log-level error &
-# 启动jpeg图片编码&发布pkg
+# Start jpeg image encoding & publishing package
 ./install/lib/hobot_codec/hobot_codec_republish --ros-args -p channel:=1 -p in_mode:=shared_mem -p in_format:=nv12 -p out_mode:=ros -p out_format:=jpeg -p sub_topic:=/hbmem_img -p pub_topic:=/image_jpeg --ros-args --log-level error &
-# 启动单目rgb人体、人头、人脸、人手框和人体关键点检测pkg
+# Start mono2d body detection for single RGB image nodes including human body, head, face, hand box, and key points detection package
 ./install/lib/mono2d_body_detection/mono2d_body_detection --ros-args --log-level error &
 
-# 启动web展示pkg
+# Start web display package
 ./install/lib/websocket/websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection &
 ```
 
-### 注意事项
+### Notes
 
-第一次运行web展示需要启动webserver服务。
+To run the web display for the first time, the webserver service needs to be started.
 
-## 结果分析
+## Results Analysis
 
-### 结果LOG展示
+### Result LOG Display
 
 ```text
 root@ubuntu:~# ros2 run websocket websocket --ros-args -p image_topic:=/image_jpeg -p image_type:=mjpeg -p smart_topic:=/hobot_mono2d_body_detection
@@ -244,16 +238,14 @@ Parameter:
 [INFO] [1652694326.098510510] [websocket]: Websocket using image jpeg
 ```
 
-### web效果展示
+### Web Display Effect
 
-使用谷歌浏览器或Edge，输入<http://IP:8000>，即可查看图像和算法渲染效果（IP为设备IP地址）。
+Use Google Chrome or Edge, enter <http://IP:8000> to view the image and algorithm rendering effect (IP is the device's IP address).## Frequently Asked Questions
 
-## 常见问题
+### Failed to start webserver
 
-### 启动webserver失败
+The webserver service needs to use port 8000. If the port is already in use, the startup will fail.
 
-webserver服务需要使用8000端口，如果端口被占用，则会启动失败。
+You can use the command `lsof -i:8000` to check which process is occupying port 8000. Use `kill <PID>` to terminate the process using port 8000, and then restart the server.
 
-可以使用`lsof -i:8000`命令查看8000端口占用进程，使用`kill <PID>`关闭占用8000端口进程，然后重新启动即可。
-
-若用户不想停止当前正在占用8000端口的服务，可以修改**webservice/conf/nginx.conf**配置文件中的`listen`端口号，改为大于1024且未使用的端口号。注意，修改该端口号后，浏览器端使用的URL也要同步修改。
+If the user does not want to stop the current service occupying port 8000, they can modify the `listen` port number in the **webservice/conf/nginx.conf** configuration file to a port number greater than 1024 and not in use. Note that after modifying this port number, the URL used on the client side also needs to be updated accordingly.
