@@ -46,7 +46,9 @@ Compilation command: `colcon build --merge-install --packages-select websocket`
 
 1. Compilation Environment Confirmation
 
-   - Compilation in Docker with TogetherROS already installed. For Docker installation, cross-compilation instructions, and TogetherROS compilation and deployment details, refer to the README.md in the robot development platform robot_dev_config repository.- Compilation command:
+   - Compilation in Docker with TogetherROS already installed. For Docker installation, cross-compilation instructions, and TogetherROS compilation and deployment details, refer to the README.md in the robot development platform robot_dev_config repository.
+2. Compilation
+   - Compilation command:
 
    ```shell
    export TARGET_ARCH=aarch64
@@ -95,7 +97,9 @@ Specific package dependencies include:
 | smart_topic     | Subscribed smart result topic | std::string | Depending on the actual configuration of the algorithm inference node | No       | /hobot_mono2d_body_detection |
 | output_fps     | Output images according to specified frame rate | int | [1, 30], configurations beyond this range mean no frame rate control | No       | 0 (no frame rate control) |
 
-### RunningAfter successful compilation, if it is Docker cross compilation, the generated install path needs to be copied to Horizon X3 development board, other methods do not require this. The running steps are as follows:
+### Running
+
+After successful compilation, if it is Docker cross compilation, the generated install path needs to be copied to Horizon X3 development board, other methods do not require this. The running steps are as follows:
 
 #### **x86 Ubuntu system**
 
@@ -143,7 +147,7 @@ ros2 run mipi_cam mipi_cam --ros-args -p out_format:=nv12 -p image_width:=960 -p
 
 Run hobot_codec for JPEG encoding
 
-~~~shell```shell
+```shell
 ros2 run hobot_codec hobot_codec_republish --ros-args -p channel:=1 -p in_mode:=shared_mem -p in_format:=nv12 -p out_mode:=ros -p out_format:=jpeg -p sub_topic:=/hbmem_img -p pub_topic:=/image_jpeg --ros-args --log-level error &
 ```
 
@@ -240,7 +244,9 @@ Parameter:
 
 ### Web Display Effect
 
-Use Google Chrome or Edge, enter <http://IP:8000> to view the image and algorithm rendering effect (IP is the device's IP address).## Frequently Asked Questions
+Use Google Chrome or Edge, enter <http://IP:8000> to view the image and algorithm rendering effect (IP is the device's IP address).
+
+## Frequently Asked Questions
 
 ### Failed to start webserver
 
